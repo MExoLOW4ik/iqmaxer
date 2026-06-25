@@ -187,6 +187,23 @@ def init_db() -> None:
             feedback TEXT,                  -- AI feedback on the answer
             attempted_at TEXT DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS tutor_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT NOT NULL,
+            title TEXT,                     -- short display title (defaults to topic)
+            mastery INTEGER DEFAULT 0,      -- 0..100, per-topic progress
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS tutor_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id INTEGER REFERENCES tutor_sessions(id),
+            role TEXT NOT NULL,             -- 'user' | 'assistant' | 'system'
+            content TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
     """)
 
     # Seed default user if table is empty
@@ -940,7 +957,7 @@ def seed_ai_courses() -> None:
             "Learn physics through extreme environment problems",
             "Physics of Extreme Environments",
             "Master physics by solving practical problems on Mars, deep ocean, and other extreme locations. "
-            "A Solo Leveling-style course where you're a hunter navigating hostile environments.",
+            "A friendly adventure course where you're an explorer navigating hostile environments.",
             "E", 240,
         ),
     )
@@ -949,7 +966,7 @@ def seed_ai_courses() -> None:
     quests1 = [
         {
             "title": "The Mars Oil Barrel Launch",
-            "story": "You are a Hunter on Mars. A supply drop of a 100kg oil barrel must be launched from Point A (altitude 0m) to Point B (altitude 50m) which is 200m away horizontally. Mars gravity is 3.72 m/s². There is a headwind of 10 m/s opposing the launch. Assuming no air resistance on the barrel itself (only wind affects horizontal velocity), calculate the minimum initial velocity (in m/s) required to reach Point B. Round to 1 decimal place.",
+            "story": "You are an explorer on Mars. A supply drop of a 100kg oil barrel must be launched from Point A (altitude 0m) to Point B (altitude 50m) which is 200m away horizontally. Mars gravity is 3.72 m/s². There is a headwind of 10 m/s opposing the launch. Assuming no air resistance on the barrel itself (only wind affects horizontal velocity), calculate the minimum initial velocity (in m/s) required to reach Point B. Round to 1 decimal place.",
             "topic": "Projectile Motion with Modified Gravity",
             "difficulty_rank": "D",
             "xp_reward": 30,
@@ -967,7 +984,7 @@ def seed_ai_courses() -> None:
         },
         {
             "title": "Venus Sulfuric Acid Cloud Navigator",
-            "story": "Your Hunter ship flies through Venus's upper atmosphere at 100 km altitude where temperature is -10°C and pressure is 10,000 Pa. The atmosphere is 96.5% CO₂ (molar mass 44 g/mol) and 3.5% N₂ (28 g/mol). Calculate the density of the atmosphere (in kg/m³) at this altitude. Use R = 8.314 J/(mol·K). Round to 3 decimal places.",
+            "story": "Your explorer ship flies through Venus's upper atmosphere at 100 km altitude where temperature is -10°C and pressure is 10,000 Pa. The atmosphere is 96.5% CO₂ (molar mass 44 g/mol) and 3.5% N₂ (28 g/mol). Calculate the density of the atmosphere (in kg/m³) at this altitude. Use R = 8.314 J/(mol·K). Round to 3 decimal places.",
             "topic": "Ideal Gas Law with Mixed Gases",
             "difficulty_rank": "C",
             "xp_reward": 50,
@@ -976,7 +993,7 @@ def seed_ai_courses() -> None:
         },
         {
             "title": "Asteroid Mining: Kinetic Energy",
-            "story": "You're a Hunter mining an asteroid of mass 5×10^12 kg approaching Earth at 15 km/s relative velocity. Your ship must deflect it by applying a force of 10^6 N. If the force is applied continuously for 30 days, will this be enough to stop it? Calculate the asteroid's kinetic energy in Joules (scientific notation) and determine if the force applied over the given time provides enough work to stop it.",
+            "story": "You're an explorer mining an asteroid of mass 5×10^12 kg approaching Earth at 15 km/s relative velocity. Your ship must deflect it by applying a force of 10^6 N. If the force is applied continuously for 30 days, will this be enough to stop it? Calculate the asteroid's kinetic energy in Joules (scientific notation) and determine if the force applied over the given time provides enough work to stop it.",
             "topic": "Kinetic Energy and Work-Energy Theorem",
             "difficulty_rank": "C",
             "xp_reward": 50,
@@ -1010,7 +1027,7 @@ def seed_ai_courses() -> None:
         (
             "Master chemistry through magical world scenarios",
             "Chemistry of Magical Elements",
-            "Learn chemistry concepts through magical world problems. As a Hunter-Alchemist, you mix potions, transmute elements, and balance magical reactions.",
+            "Learn chemistry concepts through magical world problems. As an explorer-alchemist, you mix potions, transmute elements, and balance magical reactions.",
             "E", 180,
         ),
     )
@@ -1028,7 +1045,7 @@ def seed_ai_courses() -> None:
         },
         {
             "title": "Mana Crystal Stoichiometry",
-            "story": "Mana crystal (MgSO₄·7H₂O) is used to power Hunter enchantments. Calculate the percentage (by mass) of water in the hydrated crystal. Atomic masses: Mg=24.3, S=32.1, O=16.0, H=1.0. Round to 1 decimal place.",
+            "story": "Mana crystal (MgSO₄·7H₂O) is used to power enchantments. Calculate the percentage (by mass) of water in the hydrated crystal. Atomic masses: Mg=24.3, S=32.1, O=16.0, H=1.0. Round to 1 decimal place.",
             "topic": "Stoichiometry, Percent Composition",
             "difficulty_rank": "E",
             "xp_reward": 20,
@@ -1075,3 +1092,115 @@ def seed_ai_courses() -> None:
 
     conn.commit()
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Tutor sessions (conversational learning)
+# ---------------------------------------------------------------------------
+
+def get_tutor_sessions() -> list[dict]:
+    """List all tutor sessions, most recently updated first (for the sidebar)."""
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT * FROM tutor_sessions ORDER BY updated_at DESC"
+    ).fetchall()
+    conn.close()
+    return _rows_to_dicts(rows)
+
+
+def create_tutor_session(topic: str, title: str = "") -> dict:
+    """Create a new tutor session for a topic. Returns the session row."""
+    conn = _get_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO tutor_sessions (topic, title) VALUES (?, ?)",
+        (topic, title or topic),
+    )
+    session_id = cursor.lastrowid
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM tutor_sessions WHERE id = ?", (session_id,)
+    ).fetchone()
+    conn.close()
+    return _row_to_dict(row)
+
+
+def get_tutor_session(session_id: int) -> Optional[dict]:
+    """Get a session plus its full message history (ordered oldest first)."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT * FROM tutor_sessions WHERE id = ?", (session_id,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return None
+    msgs = conn.execute(
+        "SELECT * FROM tutor_messages WHERE session_id = ? ORDER BY id ASC",
+        (session_id,),
+    ).fetchall()
+    conn.close()
+    session = _row_to_dict(row)
+    session["messages"] = _rows_to_dicts(msgs)
+    return session
+
+
+def get_tutor_messages(session_id: int) -> list[dict]:
+    """Return just the message history (role/content) for an LLM call."""
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT role, content FROM tutor_messages WHERE session_id = ? ORDER BY id ASC",
+        (session_id,),
+    ).fetchall()
+    conn.close()
+    return _rows_to_dicts(rows)
+
+
+def add_tutor_message(session_id: int, role: str, content: str) -> dict:
+    """Append a message to a session and bump the session's updated_at."""
+    conn = _get_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO tutor_messages (session_id, role, content) VALUES (?, ?, ?)",
+        (session_id, role, content),
+    )
+    msg_id = cursor.lastrowid
+    cursor.execute(
+        "UPDATE tutor_sessions SET updated_at = datetime('now') WHERE id = ?",
+        (session_id,),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM tutor_messages WHERE id = ?", (msg_id,)
+    ).fetchone()
+    conn.close()
+    return _row_to_dict(row)
+
+
+def bump_tutor_mastery(session_id: int, amount: int) -> int:
+    """Increase a session's mastery (0..100) by `amount`, capped. Returns new value."""
+    conn = _get_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE tutor_sessions SET mastery = MIN(100, mastery + ?) WHERE id = ?",
+        (amount, session_id),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT mastery FROM tutor_sessions WHERE id = ?", (session_id,)
+    ).fetchone()
+    conn.close()
+    return row["mastery"] if row else 0
+
+
+def delete_tutor_session(session_id: int) -> bool:
+    """Delete a session and all its messages. Returns True if it existed."""
+    conn = _get_conn()
+    cursor = conn.cursor()
+    existed = cursor.execute(
+        "SELECT id FROM tutor_sessions WHERE id = ?", (session_id,)
+    ).fetchone() is not None
+    cursor.execute("DELETE FROM tutor_messages WHERE session_id = ?", (session_id,))
+    cursor.execute("DELETE FROM tutor_sessions WHERE id = ?", (session_id,))
+    conn.commit()
+    conn.close()
+    return existed

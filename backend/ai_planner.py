@@ -1,7 +1,7 @@
 """
-ai_planner.py — iQmaxer AI Plan Generator (OpenRouter + Solo Leveling themed)
+ai_planner.py — iQmaxer AI Plan Generator (OpenRouter + friendly adventure themed)
 
-Generates intense, hierarchical learning plans with quests in the style of Solo Leveling's System.
+Generates motivating, hierarchical learning plans with quests in a friendly adventure style.
 Uses OpenRouter to access GPT-4o or Claude Sonnet 4. Falls back to a hardcoded plan if the
 API key is missing or the request fails.
 """
@@ -35,8 +35,8 @@ RANK_XP_DAILY = {"E": 10, "D": 25, "C": 50, "B": 100, "A": 250, "S": 500}
 QUIEST_TYPES = ["yearly", "monthly", "daily"]
 RANK_ORDER = ["E", "D", "C", "B", "A", "S"]
 
-# ── Solo Leveling System prompt ───────────────────────────────────────────────
-SYSTEM_PROMPT = """You are the System from Solo Leveling. You are tasked with generating an intense, no-mercy training plan for the user.
+# ── Plan generator system prompt ──────────────────────────────────────────────
+SYSTEM_PROMPT = """You are an encouraging learning coach. You are tasked with generating a motivating, achievable training plan for the learner.
 
 Style: Cold, objective, RPG-quest style. Use casual motivating language (Russian language is OK).
 
@@ -219,7 +219,7 @@ Timeframe: {timeframe}
 {deadlines_hint}
 
 === INSTRUCTIONS ===
-Generate a Solo Leveling training plan for this goal. Return ONLY valid JSON matching the schema.
+Generate an encouraging training plan for this goal. Return ONLY valid JSON matching the schema.
 Make it intense. Make it brutal. "Лююютый план".
 """
 
@@ -347,7 +347,7 @@ def _parse_plan(raw: str) -> Optional[dict]:
 
 async def generate_plan(title: str, description: str, timeframe: str) -> dict:
     """
-    Generate an AI-powered Solo Leveling style learning plan.
+    Generate an AI-powered adventure-style learning plan.
 
     Parameters
     ----------

@@ -44,6 +44,19 @@ except ImportError:
     async def generate_hint(_quest: dict) -> str:
         return "AI course module not available"
 
+# Try to import the conversational tutor
+try:
+    from ai_tutor import open_session as tutor_open, continue_session as tutor_continue
+    HAS_AI_TUTOR = True
+except ImportError:
+    HAS_AI_TUTOR = False
+
+    async def tutor_open(_topic: str) -> str:
+        return "The tutor module is not available."
+
+    async def tutor_continue(_history: list) -> str:
+        return "The tutor module is not available."
+
 
 from gamification import (
     calculate_streak_bonus,
@@ -106,6 +119,14 @@ class GenerateCourseRequest(BaseModel):
 
 class AnswerQuestRequest(BaseModel):
     answer: str
+
+
+class StartTutorRequest(BaseModel):
+    topic: str
+
+
+class TutorMessageRequest(BaseModel):
+    content: str
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +416,7 @@ async def api_generate_course(req: GenerateCourseRequest):
 
         if not result.get("quests") or len(result["quests"]) == 0:
             # Fallback: provide a seed course with the user's goal
-            fallback_title = f"Solo Leveling: {req.goal[:50]}"
+            fallback_title = f"Adventure: {req.goal[:50]}"
             database.update_course_status(course["id"], "ready")
 
             # Single connection for the entire fallback to avoid DB locking
@@ -568,6 +589,85 @@ async def api_get_quest_hint(quest_id: int):
     conn.close()
 
     return {"hint": hint}
+
+
+# ---------------------------------------------------------------------------
+# Conversational Tutor
+# ---------------------------------------------------------------------------
+
+# XP awarded each time the learner makes a substantive contribution to a lesson.
+TUTOR_TURN_XP = 5
+# Mastery gained per learner turn (0..100).
+TUTOR_TURN_MASTERY = 8
+
+
+@app.get("/api/tutor/sessions")
+async def api_list_tutor_sessions():
+    """List saved tutor sessions for the sidebar."""
+    return database.get_tutor_sessions()
+
+
+@app.post("/api/tutor/sessions")
+async def api_start_tutor_session(req: StartTutorRequest):
+    """Start a session for a topic: create it and generate the tutor's opening."""
+    topic = req.topic.strip()
+    if not topic:
+        raise HTTPException(status_code=400, detail="Topic is required")
+
+    session = database.create_tutor_session(topic)
+    opening = await tutor_open(topic)
+    database.add_tutor_message(session["id"], "assistant", opening)
+    return database.get_tutor_session(session["id"])
+
+
+@app.get("/api/tutor/sessions/{session_id}")
+async def api_get_tutor_session(session_id: int):
+    """Get a session with its full message history (resume)."""
+    session = database.get_tutor_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
+@app.post("/api/tutor/sessions/{session_id}/message")
+async def api_tutor_message(session_id: int, req: TutorMessageRequest):
+    """Send a learner message; get the tutor's reply plus any XP/mastery update."""
+    session = database.get_tutor_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    content = req.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    # Record the learner's message, then ask the tutor for its reply.
+    database.add_tutor_message(session_id, "user", content)
+    history = database.get_tutor_messages(session_id)
+    reply = await tutor_continue(history)
+    database.add_tutor_message(session_id, "assistant", reply)
+
+    # Reward engagement: streak + a little XP + topic mastery (heuristic).
+    database.update_streak()
+    xp_result = database.update_user_xp(TUTOR_TURN_XP)
+    mastery = database.bump_tutor_mastery(session_id, TUTOR_TURN_MASTERY)
+    fresh_user = database.get_user()
+
+    return {
+        "reply": reply,
+        "mastery": mastery,
+        "xp_earned": TUTOR_TURN_XP,
+        "level_up": xp_result.get("level_up", False),
+        "user": fresh_user,
+    }
+
+
+@app.delete("/api/tutor/sessions/{session_id}")
+async def api_delete_tutor_session(session_id: int):
+    """Delete a session and its messages."""
+    existed = database.delete_tutor_session(session_id)
+    if not existed:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"deleted": True}
 
 
 # ---------------------------------------------------------------------------
