@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>iQmaxer — Solo Leveling</title>
+<style>
+/* ========== RESET & BASE ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  background:#0a0a1a;
+  color:#e0e0f0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  line-height:1.5;
+}
+a{color:#48cae4;text-decoration:none}
+a:hover{color:#90e0ef}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#0a0a1a}
+::-webkit-scrollbar-thumb{background:#1a1a3e;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#2a2a5e}
+
+/* ========== GLASS CARD ========== */
+.glass{
+  background:rgba(17,17,40,0.85);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid #1a1a3e;
+  border-radius:16px;
+  padding:20px;
+  transition:all .3s ease;
+}
+.glass:hover{border-color:#2a2a5e;box-shadow:0 0 20px rgba(0,180,216,0.08)}
+
+/* ========== RANK BADGES ========== */
+.rank-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:8px;
+  font-weight:800;font-size:.8rem;
+  text-shadow:0 0 8px currentColor;
+  flex-shrink:0;
+}
+.rank-badge.sm{width:24px;height:24px;font-size:.65rem;border-radius:5px}
+.rank-badge.lg{width:48px;height:48px;font-size:1.2rem;border-radius:12px}
+.rank-badge.xl{width:72px;height:72px;font-size:1.8rem;border-radius:16px}
+.rank-E{background:rgba(136,136,136,0.2);color:#888;border:1px solid rgba(136,136,136,0.4)}
+.rank-D{background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.4)}
+.rank-C{background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.4)}
+.rank-B{background:rgba(167,139,250,0.15);color:#a78bfa;border:1px solid rgba(167,139,250,0.4)}
+.rank-A{background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.4)}
+.rank-S{background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.5);box-shadow:0 0 20px rgba(239,68,68,0.2)}
+
+/* ========== BUTTONS ========== */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 24px;border-radius:10px;border:none;
+  font-weight:600;font-size:.9rem;font-family:inherit;
+  cursor:pointer;transition:all .3s ease;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#0077b6,#00b4d8);
+  color:#fff;box-shadow:0 0 20px rgba(0,180,216,0.3);
+}
+.btn-primary:hover{
+  box-shadow:0 0 30px rgba(0,180,216,0.5);
+  transform:translateY(-2px);
+}
+.btn-primary:active{transform:translateY(0)}
+.btn-outline{
+  background:transparent;color:#00b4d8;border:1px solid #00b4d8;
+}
+.btn-outline:hover{background:rgba(0,180,216,0.1);box-shadow:0 0 15px rgba(0,180,216,0.15)}
+.btn-ghost{
+  background:transparent;color:#888;border:1px solid #1a1a3e;
+}
+.btn-ghost:hover{color:#e0e0f0;border-color:#2a2a5e}
+
+/* ========== XP BAR ========== */
+.xp-bar-wrap{
+  width:100%;height:12px;background:#1a1a3e;border-radius:99px;
+  overflow:hidden;position:relative;
+}
+.xp-bar-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#0077b6,#00b4d8,#48cae4);
+  border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.xp-bar-fill::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);
+  animation:xpShimmer 2s ease-in-out infinite;
+}
+@keyframes xpShimmer{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
+}
+
+/* ========== HUD / TOP BAR ========== */
+.hud{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;background:rgba(10,10,26,0.95);
+  border-bottom:1px solid #1a1a3e;position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);
+}
+.hud-left{display:flex;align-items:center;gap:16px}
+.hud-right{display:flex;align-items:center;gap:12px}
+.hud-level{
+  font-weight:800;font-size:1.2rem;color:#48cae4;
+}
+.hud-title{font-size:.8rem;color:#888}
+.hud-streak{display:flex;align-items:center;gap:4px;color:#fbbf24;font-weight:600;font-size:.85rem}
+.nav-icon{
+  background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;
+  padding:6px;border-radius:8px;transition:all .2s;
+}
+.nav-icon:hover{color:#48cae4;background:rgba(0,180,216,0.1)}
+.nav-icon.active{color:#00b4d8}
+
+/* ========== LAYOUT ========== */
+.app-container{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+
+.section-title{
+  font-size:1.3rem;font-weight:700;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-title .icon{font-size:1.2rem}
+
+/* ========== DASHBOARD ========== */
+.player-card{
+  display:flex;align-items:center;gap:20px;
+  padding:24px;margin-bottom:24px;
+}
+.player-info{flex:1}
+.player-name{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.player-rank-line{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.player-title{color:#888;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}
+.xp-row{display:flex;align-items:center;gap:12px;margin-top:8px}
+.xp-text{font-size:.8rem;color:#888;white-space:nowrap}
+.streak-badge{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:99px;
+  background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);
+  color:#fbbf24;font-weight:600;font-size:.85rem;
+}
+.streak-fire{font-size:1.1rem}
+
+/* ========== GOALS CARDS ========== */
+.goal-card{
+  padding:18px 20px;margin-bottom:12px;cursor:pointer;
+  display:flex;flex-direction:column;gap:8px;
+}
+.goal-card:hover{border-color:#2a2a5e;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.goal-card-top{display:flex;align-items:center;gap:12px}
+.goal-card-title{font-weight:600;font-size:.95rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.goal-card-meta{display:flex;align-items:center;gap:16px;font-size:.8rem;color:#888}
+.goal-card-progress{flex:1}
+.goal-card-pct{color:#00b4d8;font-weight:600;font-size:.8rem}
+.goal-card-deadline{color:#888;font-size:.75rem}
+.goal-card .xp-bar-wrap{height:6px}
+
+/* ========== DAILY QUESTS ========== */
+.daily-list{display:flex;flex-direction:column;gap:8px}
+.daily-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border-radius:12px;
+  background:rgba(17,17,40,0.6);border:1px solid #1a1a3e;
+  transition:all .3s ease;cursor:pointer;
+}
+.daily-item:hover{border-color:#2a2a5e}
+.daily-item.completed{opacity:0.5;border-color:#2a2a5e}
+.daily-item.completed .daily-title{text-decoration:line-through}
+.daily-check{
+  width:22px;height:22px;border-radius:6px;
+  border:2px solid #1a1a3e;background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:pointer;transition:all .3s;
+  font-size:.75rem;color:transparent;
+}
+.daily-check.checked{
+  background:linear-gradient(135deg,#0077b6,#00b4d8);
+  border-color:#00b4d8;color:#fff;box-shadow:0 0 10px rgba(0,180,216,0.3);
+}
+.daily-info{flex:1;min-width:0}
+.daily-title{font-size:.9rem;font-weight:500}
+.daily-xp{font-size:.75rem;color:#888}
+.daily-deadline{font-size:.7rem;color:#555}
+
+/* ========== ACHIEVEMENTS ========== */
+.achievements-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px;
+}
+.achievement-card{
+  padding:16px;text-align:center;border-radius:12px;
+  background:rgba(17,17,40,0.6);border:1px solid #1a1a3e;
+  transition:all .3s;cursor:default;
+}
+.achievement-card.unlocked{border-color:#00b4d8;box-shadow:0 0 12px rgba(0,180,216,0.1)}
+.achievement-card.locked{filter:grayscale(1);opacity:0.4}
+.achievement-icon{font-size:2rem;margin-bottom:8px}
+.achievement-name{font-size:.8rem;font-weight:600;margin-bottom:4px}
+.achievement-desc{font-size:.7rem;color:#888}
+.achievement-xp{font-size:.7rem;color:#00b4d8;margin-top:4px}
+
+/* ========== GOAL DETAIL ========== */
+.goal-detail-header{
+  display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;
+}
+.goal-detail-info{flex:1}
+.goal-detail-title{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+.goal-detail-desc{color:#888;font-size:.9rem;margin-bottom:12px}
+.goal-detail-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:.8rem;color:#888}
+
+.quest-group{margin-bottom:20px}
+.quest-group-title{
+  font-size:.85rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:#555;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.quest-group-title .line{flex:1;height:1px;background:#1a1a3e}
+
+/* ========== CREATE FORM ========== */
+.form-group{margin-bottom:16px}
+.form-label{
+  display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;color:#aaa;
+}
+.form-input,.form-textarea,.form-select{
+  width:100%;padding:12px 14px;border-radius:10px;
+  background:rgba(17,17,40,0.8);border:1px solid #1a1a3e;
+  color:#e0e0f0;font-family:inherit;font-size:.9rem;
+  transition:border-color .3s;outline:none;
+}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:#00b4d8;box-shadow:0 0 10px rgba(0,180,216,0.15)}
+.form-textarea{resize:vertical;min-height:100px}
+.form-select{appearance:none;-webkit-appearance:none;cursor:pointer}
+.form-select option{background:#111128;color:#e0e0f0}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ========== GOALS GRID ========== */
+.goals-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;
+}
+.goals-grid .goal-card{margin-bottom:0}
+
+/* ========== FEED ========== */
+.feed-list{display:flex;flex-direction:column;gap:8px}
+.feed-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 14px;border-radius:10px;
+  background:rgba(17,17,40,0.4);border-left:3px solid #1a1a3e;
+  font-size:.85rem;
+}
+.feed-item.goal-created{border-left-color:#0077b6}
+.feed-item.quest-done{border-left-color:#4ade80}
+.feed-item.level-up{border-left-color:#fbbf24;background:rgba(251,191,36,0.05)}
+.feed-item.achievement{border-left-color:#a78bfa}
+.feed-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.feed-text{flex:1}
+.feed-time{font-size:.7rem;color:#555;white-space:nowrap}
+
+/* ========== LEVEL UP OVERLAY ========== */
+.level-up-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.85);
+  z-index:9999;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.level-up-overlay.show{opacity:1;pointer-events:auto}
+.level-up-text{
+  font-size:5rem;font-weight:900;
+  background:linear-gradient(135deg,#00b4d8,#48cae4,#e0f7fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-shadow:none;
+  filter:drop-shadow(0 0 40px rgba(0,180,216,0.6));
+  animation:levelUpPulse 1.5s ease-in-out infinite;
+}
+@keyframes levelUpPulse{
+  0%,100%{transform:scale(1);filter:drop-shadow(0 0 40px rgba(0,180,216,0.6))}
+  50%{transform:scale(1.05);filter:drop-shadow(0 0 60px rgba(0,180,216,0.9))}
+}
+.level-up-sub{
+  font-size:1.2rem;color:#888;margin-top:8px;
+}
+.level-up-new-rank{
+  margin-top:12px;animation:levelUpRankPop .5s ease backwards .5s;
+}
+@keyframes levelUpRankPop{
+  0%{transform:scale(0) rotate(-20deg);opacity:0}
+  70%{transform:scale(1.15) rotate(3deg)}
+  100%{transform:scale(1) rotate(0);opacity:1}
+}
+.level-up-flash{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,180,216,0.15);
+  pointer-events:none;z-index:9998;
+  animation:flashOut .8s ease forwards;
+}
+@keyframes flashOut{
+  0%{opacity:1}
+  100%{opacity:0}
+}
+
+/* ========== SYSTEM MESSAGE ========== */
+.system-msg{
+  padding:14px 18px;border-radius:10px;
+  background:#0d0d20;border:1px solid #00b4d8;
+  color:#48cae4;font-family:'Courier New',monospace;
+  font-size:.85rem;margin-bottom:16px;
+  box-shadow:0 0 15px rgba(0,180,216,0.1);
+  position:relative;
+}
+.system-msg::before{
+  content:'▶';margin-right:8px;color:#00b4d8;
+}
+
+/* ========== FLOATING XP ========== */
+.floating-xp{
+  position:fixed;pointer-events:none;z-index:9997;
+  font-weight:800;font-size:1.2rem;color:#00b4d8;
+  animation:floatUp 1.2s ease-out forwards;
+}
+@keyframes floatUp{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-80px) scale(1.3)}
+}
+
+/* ========== GREEN GLOW (quest complete) ========== */
+.quest-complete-glow{
+  animation:greenGlow .6s ease;
+}
+@keyframes greenGlow{
+  0%,100%{box-shadow:0 0 0 rgba(74,222,128,0)}
+  50%{box-shadow:0 0 25px rgba(74,222,128,0.4),inset 0 0 15px rgba(74,222,128,0.1)}
+}
+
+/* ========== LOADING ========== */
+.loading{
+  text-align:center;padding:40px;color:#555;font-size:.9rem;
+}
+.loading::after{
+  content:'';display:inline-block;width:20px;height:20px;
+  border:2px solid #1a1a3e;border-top-color:#00b4d8;
+  border-radius:50%;animation:spin .8s linear infinite;
+  margin-left:8px;vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.error-msg{
+  text-align:center;padding:40px;color:#ef4444;font-size:.9rem;
+}
+
+/* ========== EMPTY STATE ========== */
+.empty-state{
+  text-align:center;padding:40px 20px;color:#555;
+}
+.empty-state .icon{font-size:2.5rem;margin-bottom:12px}
+.empty-state .text{font-size:.9rem}
+
+/* ========== NOTIFICATION ========== */
+.notification{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  padding:12px 24px;border-radius:10px;
+  background:#111128;border:1px solid #00b4d8;
+  color:#e0e0f0;font-size:.85rem;
+  box-shadow:0 4px 20px rgba(0,0,0,0.5);
+  z-index:9996;
+  animation:notifIn .3s ease;
+}
+@keyframes notifIn{
+  0%{opacity:0;transform:translateX(-50%) translateY(20px)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+
+/* ========== RESPONSIVE ========== */
+@media(max-width:768px){
+  html{font-size:14px}
+  .app-container{padding:12px 12px 80px}
+  .hud{padding:12px 14px}
+  .hud-level{font-size:1rem}
+  .player-card{flex-direction:column;text-align:center;gap:12px}
+  .player-rank-line{justify-content:center}
+  .xp-row{flex-direction:column;gap:6px}
+  .goals-grid{grid-template-columns:1fr}
+  .achievements-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+  .goal-detail-header{flex-direction:column;align-items:center;text-align:center}
+  .goal-detail-meta{justify-content:center}
+  .level-up-text{font-size:3rem}
+  .rank-badge.xl{width:56px;height:56px;font-size:1.4rem}
+}
+@media(max-width:400px){
+  .achievements-grid{grid-template-columns:1fr}
+  .hud-left{gap:8px}
+  .hud-streak{font-size:.75rem}
+}
+
+/* ========== PAGE CONTAINERS ========== */
+.page{display:none}
+.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+
+/* ========== BOTTOM NAV (MOBILE) ========== */
+.bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:rgba(10,10,26,0.98);backdrop-filter:blur(12px);
+  border-top:1px solid #1a1a3e;
+  z-index:100;padding:8px 0 env(safe-area-inset-bottom,8px);
+}
+@media(max-width:768px){
+  .bottom-nav{display:flex;justify-content:space-around}
+}
+.bottom-nav a{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 12px;border-radius:8px;
+  color:#555;font-size:.65rem;transition:all .2s;
+}
+.bottom-nav a.active{color:#00b4d8}
+.bottom-nav a .nav-icon{font-size:1.2rem;padding:0;color:inherit}
+</style>
+</head>
+<body>
+
+<!-- ===== HUD ===== -->
+<header class="hud" id="hud">
+  <div class="hud-left">
+    <span class="hud-level" id="hudLevel">Lv.1</span>
+    <span class="rank-badge rank-E sm" id="hudRank">E</span>
+    <div>
+      <div class="hud-title" id="hudTitle">Novice</div>
+    </div>
+  </div>
+  <div class="hud-right">
+    <span class="hud-streak" id="hudStreak">🔥 <span id="hudStreakCount">0</span></span>
+    <button class="nav-icon" onclick="navigate('/create')" title="New Goal">⚡</button>
+    <button class="nav-icon" onclick="navigate('/')" title="Dashboard">🏠</button>
+  </div>
+</header>
+
+<!-- ===== APP CONTAINER ===== -->
+<main class="app-container" id="app"></main>
+
+<!-- ===== LEVEL UP OVERLAY ===== -->
+<div class="level-up-overlay" id="levelUpOverlay">
+  <div class="level-up-text">LEVEL UP!</div>
+  <div class="level-up-sub" id="levelUpSub">Lv.1 → Lv.2</div>
+  <div class="level-up-new-rank" id="levelUpRank">
+    <span class="rank-badge rank-E xl">E</span>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav">
+  <a href="#/" data-nav="dashboard">
+    <span class="nav-icon">🏠</span>Home
+  </a>
+  <a href="#/goals" data-nav="goals">
+    <span class="nav-icon">🎯</span>Goals
+  </a>
+  <a href="#/create" data-nav="create">
+    <span class="nav-icon">⚡</span>New
+  </a>
+  <a href="#/achievements" data-nav="achievements">
+    <span class="nav-icon">🏆</span>Achievements
+  </a>
+</nav>
+
+<script>
+/* ===================================================================
+   iQmaxer — Solo Leveling Frontend
+   =================================================================== */
+
+// ===================== STATE =====================
+let state = {
+  user: null,
+  goals: [],
+  daily: [],
+  history: [],
+  achievements: [],
+  currentGoal: null,
+  loading: false,
+  error: null,
+};
+
+// ===================== API =====================
+const api = {
+  async get(url, opts = {}) {
+    const r = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
+    });
+    if (!r.ok) {
+      const body = await r.text();
+      let msg;
+      try { msg = JSON.parse(body).detail || body; } catch { msg = body; }
+      throw new Error(msg || `HTTP ${r.status}`);
+    }
+    return r.json();
+  },
+  getUser:        () => api.get('/api/user'),
+  getGoals:       () => api.get('/api/goals'),
+  getGoal:        id => api.get(`/api/goals/${id}`),
+  getDaily:       () => api.get('/api/daily'),
+  getHistory:     () => api.get('/api/history'),
+  getAchievements:() => api.get('/api/achievements'),
+  createGoal:     data => api.get('/api/goals', { method: 'POST', body: JSON.stringify(data) }),
+  completeQuest:  id => api.get(`/api/quests/${id}`, { method: 'PATCH', body: JSON.stringify({ completed: true }) }),
+};
+
+// ===================== RANK HELPERS =====================
+const RANK_ORDER = ['E','D','C','B','A','S'];
+const RANK_TITLES = { E:'Novice', D:'Apprentice', C:'Warrior', B:'Elite', A:'Master', S:'Monarch' };
+const RANK_COLORS = { E:'#888', D:'#4ade80', C:'#60a5fa', B:'#a78bfa', A:'#fbbf24', S:'#ef4444' };
+
+function getRank(xp) {
+  if (xp >= 10000) return 'S';
+  if (xp >= 5000)  return 'A';
+  if (xp >= 2000)  return 'B';
+  if (xp >= 1000)  return 'C';
+  if (xp >= 300)   return 'D';
+  return 'E';
+}
+
+function getLevel(xp) {
+  // Each level costs: 100 * level
+  let level = 1, needed = 100;
+  while (xp >= needed) {
+    xp -= needed;
+    level++;
+    needed = 100 * level;
+  }
+  return level;
+}
+
+function getXpProgress(xp) {
+  let level = 1, needed = 100, total = xp;
+  while (total >= needed) {
+    total -= needed;
+    level++;
+    needed = 100 * level;
+  }
+  return { level, currentXp: total, neededXp: needed, progress: total / needed };
+}
+
+// ===================== NOTIFICATIONS =====================
+function notify(msg) {
+  const old = document.querySelector('.notification');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'notification';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.remove(); }, 3000);
+}
+
+// ===================== FLOATING XP =====================
+function showFloatingXp(x, y, xp) {
+  const el = document.createElement('div');
+  el.className = 'floating-xp';
+  el.textContent = `+${xp} XP`;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ===================== LEVEL UP OVERLAY =====================
+function showLevelUp(user, oldLevel, oldRank) {
+  const overlay = document.getElementById('levelUpOverlay');
+  document.getElementById('levelUpSub').textContent = `Lv.${oldLevel} → Lv.${user.level}`;
+
+  const rankEl = document.getElementById('levelUpRank');
+  const r = getRank(user.xp);
+  rankEl.innerHTML = `<span class="rank-badge rank-${r} xl">${r}</span>`;
+
+  overlay.classList.add('show');
+
+  // Flash
+  const flash = document.createElement('div');
+  flash.className = 'level-up-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 900);
+
+  // Auto dismiss
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    notify(`Level Up! You are now Lv.${user.level} ${RANK_TITLES[r] || ''}`);
+  }, 3000);
+}
+
+// ===================== RENDER =====================
+function renderPage(html) {
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderPlayerCard(user) {
+  const { level, currentXp, neededXp, progress } = getXpProgress(user.xp);
+  const rank = getRank(user.xp);
+  const title = RANK_TITLES[rank] || 'Unknown';
+  return `
+    <div class="glass player-card">
+      <span class="rank-badge rank-${rank} xl">${rank}</span>
+      <div class="player-info">
+        <div class="player-name">${escapeHtml(user.display_name || user.username || 'Player')}</div>
+        <div class="player-rank-line">
+          <span class="player-title">${title}</span>
+          <span style="color:#888;font-size:.8rem">—</span>
+          <span style="color:#48cae4;font-weight:700">Lv.${level}</span>
+        </div>
+        <div class="xp-row">
+          <div class="xp-bar-wrap" style="flex:1">
+            <div class="xp-bar-fill" style="width:${(progress*100).toFixed(1)}%"></div>
+          </div>
+          <span class="xp-text">${currentXp} / ${neededXp} XP</span>
+        </div>
+      </div>
+      <div class="streak-badge" title="Day streak">
+        <span class="streak-fire">🔥</span>
+        <span>${user.streak || 0}</span>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ===================== PAGES =====================
+
+function renderDashboard() {
+  const { user, goals, daily, history } = state;
+  if (!user) return `<div class="loading">Loading...</div>`;
+
+  const activeGoals = (goals || []).slice(0, 5);
+  const todayDaily = (daily || []).slice(0, 8);
+  const recentHistory = (history || []).slice(0, 10);
+
+  let html = '';
+
+  // System message
+  html += `<div class="system-msg">Welcome back, Hunter. ${user.display_name || user.username || 'Player'} — your daily quests await.</div>`;
+
+  // Player Card
+  html += renderPlayerCard(user);
+
+  // New Goal button
+  html += `<div style="margin-bottom:20px"><button class="btn btn-primary" onclick="navigate('/create')">⚡ New Goal</button></div>`;
+
+  // Active Goals
+  if (activeGoals.length > 0) {
+    html += `<div class="section-title"><span class="icon">🎯</span> Active Goals</div>`;
+    html += `<div class="daily-list">`;
+    for (const g of activeGoals) {
+      const r = getRank(g.xp_reward || 0);
+      const pct = g.progress != null ? g.progress : (g.completed_quests && g.total_quests ? g.completed_quests/g.total_quests : 0);
+      const timeLeft = g.deadline ? timeRemaining(g.deadline) : '';
+      html += `
+        <div class="goal-card glass" onclick="navigate('/goal/${g.id}')">
+          <div class="goal-card-top">
+            <span class="rank-badge rank-${r} sm">${r}</span>
+            <span class="goal-card-title">${escapeHtml(g.title)}</span>
+            <span class="goal-card-pct">${(pct*100).toFixed(0)}%</span>
+          </div>
+          <div class="goal-card-progress">
+            <div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:${(pct*100).toFixed(1)}%"></div></div>
+          </div>
+          <div class="goal-card-meta">
+            <span>🗓 ${timeLeft || 'No deadline'}</span>
+            <span>⭐ ${g.xp_reward || 0} XP</span>
+          </div>
+        </div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div class="empty-state"><div class="icon">🎯</div><div class="text">No active goals. Create your first!</div></div>`;
+  }
+
+  // Daily Quests
+  html += `<div class="section-title" style="margin-top:24px"><span class="icon">📋</span> Daily Quests</div>`;
+  if (todayDaily.length > 0) {
+    html += `<div class="daily-list">`;
+    for (const q of todayDaily) {
+      const r = getRank(q.xp_reward || 10);
+      html += `
+        <div class="daily-item ${q.completed ? 'completed' : ''}" data-quest-id="${q.id}" onclick="handleQuestClick(this, event)">
+          <div class="daily-check ${q.completed ? 'checked' : ''}">${q.completed ? '✓' : ''}</div>
+          <div class="daily-info">
+            <div class="daily-title">${escapeHtml(q.title)}</div>
+            <div class="daily-xp">+${q.xp_reward || 10} XP</div>
+          </div>
+          <span class="rank-badge rank-${r} sm">${r}</span>
+        </div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div class="empty-state"><div class="icon">📋</div><div class="text">No daily quests today.</div></div>`;
+  }
+
+  // Recent Activity
+  if (recentHistory.length > 0) {
+    html += `<div class="section-title" style="margin-top:24px"><span class="icon">📜</span> Recent Activity</div>`;
+    html += `<div class="feed-list">`;
+    for (const h of recentHistory) {
+      const icon = h.type === 'quest' ? '✅' : h.type === 'level_up' ? '⬆️' : h.type === 'achievement' ? '🏆' : h.type === 'goal' ? '🎯' : '📌';
+      const cls = h.type === 'quest' ? 'quest-done' : h.type === 'level_up' ? 'level-up' : h.type === 'achievement' ? 'achievement' : 'goal-created';
+      const time = h.created_at ? timeAgo(h.created_at) : '';
+      html += `
+        <div class="feed-item ${cls}">
+          <span class="feed-icon">${icon}</span>
+          <span class="feed-text">${escapeHtml(h.message || h.description || '')}</span>
+          <span class="feed-time">${time}</span>
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  renderPage(html);
+}
+
+function renderGoals() {
+  const { goals } = state;
+  if (!goals) return renderPage(`<div class="loading">Loading...</div>`);
+
+  if (goals.length === 0) {
+    return renderPage(`
+      <div class="section-title"><span class="icon">🎯</span> All Goals</div>
+      <div class="empty-state">
+        <div class="icon">🎯</div>
+        <div class="text">No goals yet. Create one!</div>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="navigate('/create')">⚡ New Goal</button>
+      </div>
+    `);
+  }
+
+  let html = `<div class="section-title"><span class="icon">🎯</span> All Goals (${goals.length})</div>`;
+  html += `<div class="goals-grid">`;
+
+  for (const g of goals) {
+    const r = getRank(g.xp_reward || 0);
+    const pct = g.progress != null ? g.progress : (g.completed_quests && g.total_quests ? g.completed_quests/g.total_quests : 0);
+    const timeLeft = g.deadline ? timeRemaining(g.deadline) : 'No deadline';
+    html += `
+      <div class="goal-card glass" onclick="navigate('/goal/${g.id}')">
+        <div class="goal-card-top">
+          <span class="rank-badge rank-${r} sm">${r}</span>
+          <span class="goal-card-title">${escapeHtml(g.title)}</span>
+          <span class="goal-card-pct">${(pct*100).toFixed(0)}%</span>
+        </div>
+        <div class="goal-card-progress">
+          <div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:${(pct*100).toFixed(1)}%"></div></div>
+        </div>
+        <div class="goal-card-meta">
+          <span>🗓 ${timeLeft}</span>
+          <span>⭐ ${g.xp_reward || 0} XP</span>
+        </div>
+      </div>`;
+  }
+  html += `</div>`;
+
+  html += `<div style="margin-top:20px"><button class="btn btn-primary" onclick="navigate('/create')">⚡ New Goal</button></div>`;
+
+  renderPage(html);
+}
+
+async function renderGoalDetail(id) {
+  renderPage(`<div class="loading">Loading goal...</div>`);
+  try {
+    const goal = await api.getGoal(id);
+    state.currentGoal = goal;
+    renderGoalDetailHTML(goal);
+  } catch (e) {
+    renderPage(`<div class="error-msg">❌ Failed to load goal: ${escapeHtml(e.message)}</div>`);
+  }
+}
+
+function renderGoalDetailHTML(goal) {
+  const r = getRank(goal.xp_reward || 0);
+  const { level, currentXp, neededXp, progress: xpProg } = getXpProgress(goal.xp_reward || 0);
+  const timeLeft = goal.deadline ? timeRemaining(goal.deadline) : 'No deadline';
+
+  let html = `
+    <div class="goal-detail-header">
+      <span class="rank-badge rank-${r} xl">${r}</span>
+      <div class="goal-detail-info">
+        <div class="goal-detail-title">${escapeHtml(goal.title)}</div>
+        ${goal.description ? `<div class="goal-detail-desc">${escapeHtml(goal.description)}</div>` : ''}
+        <div class="goal-detail-meta">
+          <span>🗓 ${timeLeft}</span>
+          <span>⭐ ${goal.xp_reward || 0} XP</span>
+          ${goal.timeframe ? `<span>📅 ${goal.timeframe}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  // Progress bar
+  const pct = goal.progress != null ? goal.progress : (goal.completed_quests && goal.total_quests ? goal.completed_quests / goal.total_quests : 0);
+  html += `
+    <div class="glass" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;color:#888;margin-bottom:6px">
+        <span>Progress</span>
+        <span>${(pct*100).toFixed(0)}%</span>
+      </div>
+      <div class="xp-bar-wrap" style="height:14px">
+        <div class="xp-bar-fill" style="width:${(pct*100).toFixed(1)}%"></div>
+      </div>
+    </div>`;
+
+  // Quests hierarchy
+  if (goal.quests && goal.quests.length > 0) {
+    // Group quests
+    const yearly = goal.quests.filter(q => q.timeframe === 'year');
+    const monthly = goal.quests.filter(q => q.timeframe === 'month');
+    const daily = goal.quests.filter(q => q.timeframe === 'day' || !q.timeframe);
+
+    if (yearly.length > 0) {
+      html += renderQuestGroup('Yearly Milestones', '📅', yearly);
+    }
+    if (monthly.length > 0) {
+      html += renderQuestGroup('Monthly Milestones', '📆', monthly);
+    }
+    if (daily.length > 0) {
+      html += renderQuestGroup('Daily Quests', '📋', daily);
+    }
+  } else {
+    html += `<div class="empty-state"><div class="icon">📋</div><div class="text">No quests defined for this goal.</div></div>`;
+  }
+
+  html += `<div style="margin-top:16px"><button class="btn btn-ghost" onclick="navigate('/goals')">← Back to Goals</button></div>`;
+
+  renderPage(html);
+}
+
+function renderQuestGroup(title, icon, quests) {
+  let html = `
+    <div class="quest-group">
+      <div class="quest-group-title"><span>${icon}</span> ${title} <span class="line"></span></div>
+      <div class="daily-list">`;
+  for (const q of quests) {
+    const qr = getRank(q.xp_reward || 10);
+    const dl = q.deadline ? timeRemaining(q.deadline) : '';
+    html += `
+      <div class="daily-item ${q.completed ? 'completed' : ''}" data-quest-id="${q.id}" onclick="handleQuestClick(this, event)">
+        <div class="daily-check ${q.completed ? 'checked' : ''}">${q.completed ? '✓' : ''}</div>
+        <div class="daily-info">
+          <div class="daily-title">${escapeHtml(q.title)}</div>
+          <div class="daily-xp">+${q.xp_reward || 10} XP ${dl ? '· ' + dl : ''}</div>
+        </div>
+        <span class="rank-badge rank-${qr} sm">${qr}</span>
+      </div>`;
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+function renderCreate() {
+  const html = `
+    <div class="section-title"><span class="icon">⚡</span> New Goal</div>
+    <div class="system-msg">Establish a new objective. The system will record your progress.</div>
+    <form id="createForm" onsubmit="handleCreateGoal(event)" style="margin-top:16px">
+      <div class="form-group">
+        <label class="form-label" for="goalTitle">Goal Title</label>
+        <input class="form-input" id="goalTitle" name="title" placeholder="e.g. Conquer the Demon Tower" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="goalDesc">Description</label>
+        <textarea class="form-textarea" id="goalDesc" name="description" placeholder="Describe your objective..." rows="3"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="goalTimeframe">Timeframe</label>
+          <select class="form-select" id="goalTimeframe" name="timeframe">
+            <option value="week">Week</option>
+            <option value="month" selected>Month</option>
+            <option value="year">Year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="goalDeadline">Target Date</label>
+          <input class="form-input" type="date" id="goalDeadline" name="deadline">
+        </div>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:12px">
+        <button type="submit" class="btn btn-primary">⚡ Create Goal</button>
+        <button type="button" class="btn btn-ghost" onclick="navigate('/')">Cancel</button>
+      </div>
+    </form>`;
+  renderPage(html);
+}
+
+function renderAchievements() {
+  const { achievements } = state;
+  if (!achievements) return renderPage(`<div class="loading">Loading...</div>`);
+
+  let html = `<div class="section-title"><span class="icon">🏆</span> Achievements</div>`;
+
+  const unlocked = achievements.filter(a => a.unlocked);
+  const locked = achievements.filter(a => !a.unlocked);
+
+  if (unlocked.length > 0) {
+    html += `<div style="margin-bottom:16px;font-size:.85rem;color:#888">Unlocked (${unlocked.length})</div>`;
+    html += `<div class="achievements-grid" style="margin-bottom:24px">`;
+    for (const a of unlocked) {
+      html += `
+        <div class="achievement-card unlocked">
+          <div class="achievement-icon">${a.icon || '🏆'}</div>
+          <div class="achievement-name">${escapeHtml(a.name || a.title || 'Achievement')}</div>
+          <div class="achievement-desc">${escapeHtml(a.description || '')}</div>
+          ${a.xp_reward ? `<div class="achievement-xp">+${a.xp_reward} XP</div>` : ''}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (locked.length > 0) {
+    html += `<div style="margin-bottom:16px;font-size:.85rem;color:#555">Locked (${locked.length})</div>`;
+    html += `<div class="achievements-grid">`;
+    for (const a of locked) {
+      html += `
+        <div class="achievement-card locked">
+          <div class="achievement-icon">${a.icon || '🔒'}</div>
+          <div class="achievement-name">${escapeHtml(a.name || a.title || '???')}</div>
+          <div class="achievement-desc">${escapeHtml(a.description || 'Hidden')}</div>
+          ${a.xp_reward ? `<div class="achievement-xp">+${a.xp_reward} XP</div>` : ''}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (achievements.length === 0) {
+    html += `<div class="empty-state"><div class="icon">🏆</div><div class="text">No achievements yet.</div></div>`;
+  }
+
+  renderPage(html);
+}
+
+// ===================== HANDLERS =====================
+
+async function handleQuestClick(el, event) {
+  if (el.classList.contains('completed')) return;
+
+  const id = el.dataset.questId;
+  if (!id) return;
+
+  // Optimistic UI
+  const check = el.querySelector('.daily-check');
+  check.classList.add('checked');
+  check.textContent = '✓';
+  el.classList.add('completed');
+
+  // Show green glow
+  el.classList.add('quest-complete-glow');
+  setTimeout(() => el.classList.remove('quest-complete-glow'), 600);
+
+  // Floating XP
+  const xpText = el.querySelector('.daily-xp');
+  const xpMatch = xpText ? xpText.textContent.match(/(\d+)/) : null;
+  const xpVal = xpMatch ? parseInt(xpMatch[1]) : 10;
+
+  if (event) {
+    showFloatingXp(event.clientX, event.clientY, xpVal);
+  } else {
+    const rect = el.getBoundingClientRect();
+    showFloatingXp(rect.right - 30, rect.top, xpVal);
+  }
+
+  try {
+    const res = await api.completeQuest(id);
+    // Check for level up
+    if (res && res.level_up) {
+      const oldLevel = res.old_level || 1;
+      const oldRank = res.old_rank || 'E';
+      showLevelUp(res.user || { level: res.new_level, xp: res.new_xp }, oldLevel, oldRank);
+    }
+    // Refresh user data
+    if (res && res.user) {
+      state.user = res.user;
+    } else {
+      state.user = await api.getUser();
+    }
+    updateHUD();
+    // Refresh current page if on dashboard to update XP bar
+    const hash = location.hash.slice(1) || '/';
+    if (hash === '/') {
+      refreshData();
+    }
+  } catch (e) {
+    // Revert on error
+    check.classList.remove('checked');
+    check.textContent = '';
+    el.classList.remove('completed');
+    notify('❌ Failed to complete quest: ' + e.message);
+  }
+}
+
+async function handleCreateGoal(event) {
+  event.preventDefault();
+  const form = event.target;
+  const data = {
+    title: form.title.value.trim(),
+    description: form.description.value.trim(),
+    timeframe: form.timeframe.value,
+    deadline: form.deadline.value || null,
+  };
+  if (!data.title) return;
+
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = '⏳ Creating...';
+
+  try {
+    const goal = await api.createGoal(data);
+    notify('✅ Goal created!');
+    navigate(`/goal/${goal.id}`);
+  } catch (e) {
+    notify('❌ Failed to create goal: ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Create Goal';
+  }
+}
+
+// ===================== NAVIGATION =====================
+
+function navigate(path) {
+  location.hash = '#' + path;
+}
+
+function getRoute(hash) {
+  hash = hash.slice(1) || '/';
+  // Match /goal/{id}
+  const goalMatch = hash.match(/^\/goal\/(\d+)$/);
+  if (goalMatch) return { page: 'goal', params: { id: goalMatch[1] } };
+  // Match other pages
+  const pages = { '/': 'dashboard', '/goals': 'goals', '/create': 'create', '/achievements': 'achievements' };
+  return { page: pages[hash] || 'dashboard', params: {} };
+}
+
+function updateHUD() {
+  const { user } = state;
+  if (!user) return;
+  const { level } = getXpProgress(user.xp);
+  const rank = getRank(user.xp);
+  const title = RANK_TITLES[rank] || 'Unknown';
+
+  document.getElementById('hudLevel').textContent = `Lv.${level}`;
+  document.getElementById('hudRank').textContent = rank;
+  document.getElementById('hudRank').className = `rank-badge rank-${rank} sm`;
+  document.getElementById('hudTitle').textContent = title;
+  document.getElementById('hudStreakCount').textContent = user.streak || 0;
+}
+
+function updateBottomNav() {
+  const hash = location.hash.slice(1) || '/';
+  document.querySelectorAll('.bottom-nav a').forEach(a => {
+    const href = a.getAttribute('href').slice(1); // remove #
+    a.classList.toggle('active', href === hash || (hash.startsWith('/goal') && href === '/goals'));
+  });
+}
+
+// ===================== TIME HELPERS =====================
+
+function timeRemaining(dateStr) {
+  if (!dateStr) return '';
+  const now = new Date();
+  const target = new Date(dateStr);
+  const diff = target - now;
+  if (diff <= 0) return 'Overdue';
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  if (days > 30) return `${Math.floor(days / 30)}mo left`;
+  if (days > 0) return `${days}d ${hours}h left`;
+  if (hours > 0) return `${hours}h left`;
+  return '< 1h left';
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const now = new Date();
+  const d = new Date(dateStr);
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
+  return `${Math.floor(diff / 2592000)}mo ago`;
+}
+
+// ===================== ROUTER =====================
+
+async function router() {
+  const hash = location.hash || '#/';
+  const route = getRoute(hash);
+
+  updateBottomNav();
+
+  try {
+    switch (route.page) {
+      case 'dashboard':
+        await refreshData();
+        renderDashboard();
+        break;
+      case 'goals':
+        state.goals = await api.getGoals();
+        renderGoals();
+        break;
+      case 'goal':
+        await renderGoalDetail(route.params.id);
+        break;
+      case 'create':
+        renderCreate();
+        break;
+      case 'achievements':
+        state.achievements = await api.getAchievements();
+        renderAchievements();
+        break;
+      default:
+        navigate('/');
+    }
+    updateHUD();
+  } catch (e) {
+    renderPage(`<div class="error-msg">❌ Error: ${escapeHtml(e.message)}</div>`);
+  }
+}
+
+async function refreshData() {
+  try {
+    const [user, goals, daily, history] = await Promise.all([
+      api.getUser(),
+      api.getGoals(),
+      api.getDaily(),
+      api.getHistory(),
+    ]);
+    state.user = user;
+    state.goals = goals;
+    state.daily = daily;
+    state.history = history;
+  } catch (e) {
+    console.error('Refresh failed:', e);
+    // Don't overwrite existing state on refresh failure
+  }
+}
+
+// ===================== INIT =====================
+
+async function init() {
+  // Load user first for HUD
+  try {
+    state.user = await api.getUser();
+    updateHUD();
+  } catch (e) {
+    console.warn('Could not load user:', e);
+  }
+
+  // Initial render
+  await router();
+}
+
+// Event listeners
+window.addEventListener('hashchange', router);
+window.addEventListener('DOMContentLoaded', init);
+
+// Handle page already loaded
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  init();
+}
+
+</script>
+</body>
+</html>
