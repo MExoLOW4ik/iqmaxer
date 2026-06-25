@@ -11,12 +11,14 @@ import sys
 # Ensure we can import sibling modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import database
+import auth
+from auth import current_user
 
 # Try to import AI planner (may not exist yet)
 try:
@@ -51,10 +53,10 @@ try:
 except ImportError:
     HAS_AI_TUTOR = False
 
-    async def tutor_open(_topic: str) -> str:
+    async def tutor_open(_topic: str, advanced: bool = False) -> str:
         return "The tutor module is not available."
 
-    async def tutor_continue(_history: list) -> str:
+    async def tutor_continue(_history: list, advanced: bool = False) -> str:
         return "The tutor module is not available."
 
 
@@ -84,9 +86,6 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup() -> None:
     database.init_db()
-    user = database.get_user()
-    if not user:
-        database.init_db()
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +126,19 @@ class StartTutorRequest(BaseModel):
 
 class TutorMessageRequest(BaseModel):
     content: str
+    advanced: bool = False
+
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    display_name: str = ""
+    avatar: str = "🛰️"
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 
 # ---------------------------------------------------------------------------
@@ -201,12 +213,12 @@ def _award_new_achievements(completed_quests: list[dict], user: dict) -> list[di
     now_unlocked = check_achievements(completed_quests)
     new_ones = []
     for ach in now_unlocked:
-        saved = database.add_achievement(ach["id"], ach["name"])
+        saved = database.add_achievement(user["id"], ach["id"], ach["name"])
         if saved:
             # Grant XP bonus for this achievement
             xp_bonus = ach.get("xp_bonus", 0)
             if xp_bonus:
-                database.update_user_xp(xp_bonus)
+                database.update_user_xp(user["id"], xp_bonus)
             new_ones.append(ach)
     return new_ones
 
@@ -217,25 +229,70 @@ def _award_new_achievements(completed_quests: list[dict], user: dict) -> list[di
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "2.0.0"}
+
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+@app.post("/api/auth/register")
+async def register(req: RegisterRequest):
+    username = req.username.strip()
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters")
+    if len(req.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if database.get_user_by_username(username):
+        raise HTTPException(status_code=409, detail="Username already taken")
+
+    user = database.create_user(
+        username=username,
+        password_hash=auth.hash_password(req.password),
+        display_name=req.display_name.strip() or username,
+        avatar=req.avatar or "🛰️",
+    )
+    token = auth.new_token()
+    database.create_session(token, user["id"])
+    return {"token": token, "user": user}
+
+
+@app.post("/api/auth/login")
+async def login(req: LoginRequest):
+    full = database.get_user_by_username(req.username.strip())
+    if not full or not auth.verify_password(req.password, full["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = auth.new_token()
+    database.create_session(token, full["id"])
+    return {"token": token, "user": database.get_user(full["id"])}
+
+
+@app.post("/api/auth/logout")
+async def logout(authorization: str = Header(None), user=Depends(current_user)):
+    token = auth._extract_bearer(authorization)
+    if token:
+        database.delete_session(token)
+    return {"ok": True}
+
+
+@app.get("/api/auth/me")
+async def auth_me(user=Depends(current_user)):
+    return user
 
 
 @app.get("/api/user")
-async def get_user():
-    user = database.get_user()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+async def get_user(user=Depends(current_user)):
     return user
 
 
 @app.get("/api/goals")
-async def list_goals():
-    return database.get_goals()
+async def list_goals(user=Depends(current_user)):
+    return database.get_goals(user["id"])
 
 
 @app.get("/api/goals/{goal_id}")
-async def get_goal(goal_id: int):
-    goal = database.get_goal(goal_id)
+async def get_goal(goal_id: int, user=Depends(current_user)):
+    goal = database.get_goal(goal_id, user["id"])
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     quests = database.get_quests(goal_id)
@@ -243,9 +300,10 @@ async def get_goal(goal_id: int):
 
 
 @app.post("/api/goals")
-async def create_goal(req: CreateGoalRequest):
+async def create_goal(req: CreateGoalRequest, user=Depends(current_user)):
     plan = await generate_plan(req.title, req.description, req.timeframe)
     goal = database.create_goal(
+        user_id=user["id"],
         title=req.title,
         description=req.description,
         timeframe=req.timeframe,
@@ -256,9 +314,10 @@ async def create_goal(req: CreateGoalRequest):
 
 
 @app.patch("/api/quests/{quest_id}")
-async def complete_quest_endpoint(quest_id: int):
+async def complete_quest_endpoint(quest_id: int, user=Depends(current_user)):
+    user_id = user["id"]
     # --- 1. Mark quest completed in DB ---
-    result = database.complete_quest(quest_id)
+    result = database.complete_quest(quest_id, user_id)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
 
@@ -266,23 +325,22 @@ async def complete_quest_endpoint(quest_id: int):
     base_xp = result["xp_reward"]
 
     # --- 2. Apply streak bonus ---
-    user = database.get_user()
     streak = user.get("streak", 0)
     multiplier = calculate_streak_bonus(streak)
     total_xp = int(base_xp * multiplier)
 
     # --- 3. Update streak (this will also increment if consecutive) ---
-    database.update_streak()
+    database.update_streak(user_id)
 
     # --- 4. Award XP and check level-up ---
-    xp_result = database.update_user_xp(total_xp)
+    xp_result = database.update_user_xp(user_id, total_xp)
 
     # --- 5. Check achievements ---
-    completed_quests = database.get_history()
+    completed_quests = database.get_history(user_id)
     new_achievements = _award_new_achievements(completed_quests, user)
 
     # Re-fetch fresh user stats
-    fresh_user = database.get_user()
+    fresh_user = database.get_user(user_id)
 
     return {
         "quest": quest,
@@ -300,18 +358,18 @@ async def complete_quest_endpoint(quest_id: int):
 
 
 @app.get("/api/daily")
-async def get_daily():
-    return database.get_daily_quests()
+async def get_daily(user=Depends(current_user)):
+    return database.get_daily_quests(user["id"])
 
 
 @app.get("/api/history")
-async def get_history():
-    return database.get_history()
+async def get_history(user=Depends(current_user)):
+    return database.get_history(user["id"])
 
 
 @app.get("/api/achievements")
-async def list_achievements():
-    return database.get_achievements()
+async def list_achievements(user=Depends(current_user)):
+    return database.get_achievements(user["id"])
 
 
 # ---------------------------------------------------------------------------
@@ -320,12 +378,12 @@ async def list_achievements():
 
 
 @app.get("/api/materials")
-async def list_materials():
+async def list_materials(user=Depends(current_user)):
     return database.get_materials()
 
 
 @app.get("/api/materials/{material_id}")
-async def get_material(material_id: int):
+async def get_material(material_id: int, user=Depends(current_user)):
     material = database.get_material(material_id)
     if not material:
         raise HTTPException(status_code=404, detail="Material not found")
@@ -333,8 +391,8 @@ async def get_material(material_id: int):
 
 
 @app.post("/api/materials/{material_id}/study")
-async def study_material(material_id: int):
-    result = database.study_material(material_id)
+async def study_material(material_id: int, user=Depends(current_user)):
+    result = database.study_material(material_id, user["id"])
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
@@ -346,12 +404,12 @@ async def study_material(material_id: int):
 
 
 @app.get("/api/tests")
-async def list_tests():
+async def list_tests(user=Depends(current_user)):
     return database.get_tests()
 
 
 @app.get("/api/tests/{test_id}")
-async def get_test(test_id: int):
+async def get_test(test_id: int, user=Depends(current_user)):
     test = database.get_test_with_questions(test_id)
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
@@ -359,8 +417,8 @@ async def get_test(test_id: int):
 
 
 @app.post("/api/tests/{test_id}/submit")
-async def submit_test(test_id: int, req: SubmitTestRequest):
-    result = database.submit_test(test_id, req.answers)
+async def submit_test(test_id: int, req: SubmitTestRequest, user=Depends(current_user)):
+    result = database.submit_test(test_id, req.answers, user["id"])
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
@@ -372,13 +430,14 @@ async def submit_test(test_id: int, req: SubmitTestRequest):
 
 
 @app.get("/api/assignments")
-async def list_assignments():
-    return database.get_assignments()
+async def list_assignments(user=Depends(current_user)):
+    return database.get_assignments(user["id"])
 
 
 @app.post("/api/assignments")
-async def create_assignment(req: CreateAssignmentRequest):
+async def create_assignment(req: CreateAssignmentRequest, user=Depends(current_user)):
     return database.create_assignment(
+        user_id=user["id"],
         title=req.title,
         description=req.description,
         subject=req.subject,
@@ -389,8 +448,8 @@ async def create_assignment(req: CreateAssignmentRequest):
 
 
 @app.patch("/api/assignments/{assignment_id}/complete")
-async def complete_assignment(assignment_id: int):
-    result = database.complete_assignment(assignment_id)
+async def complete_assignment(assignment_id: int, user=Depends(current_user)):
+    result = database.complete_assignment(assignment_id, user["id"])
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
@@ -402,58 +461,25 @@ async def complete_assignment(assignment_id: int):
 
 
 @app.post("/api/ai/courses/generate")
-async def api_generate_course(req: GenerateCourseRequest):
+async def api_generate_course(req: GenerateCourseRequest, user=Depends(current_user)):
     """Generate an AI-powered RPG course from a learning goal."""
     if not req.goal.strip():
         raise HTTPException(status_code=400, detail="Goal cannot be empty")
 
     # Create initial course record
-    course = database.create_course(goal=req.goal, title="Generating...", description="")
+    course = database.create_course(user_id=user["id"], goal=req.goal, title="Generating...", description="")
 
     try:
         # Call AI to generate the course
         result = await generate_course(req.goal)
 
         if not result.get("quests") or len(result["quests"]) == 0:
-            # Fallback: provide a seed course with the user's goal
-            fallback_title = f"Adventure: {req.goal[:50]}"
-            database.update_course_status(course["id"], "ready")
-
-            # Single connection for the entire fallback to avoid DB locking
-            conn = database._get_conn()
-            cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE ai_courses SET title = ?, description = ? WHERE id = ?",
-                (fallback_title, f"AI course generation unavailable. Try again later or explore the seeded courses.", course["id"]),
+            # No quests generated (AI unavailable) — mark the course as errored.
+            database.update_course_status(
+                course["id"], "error",
+                "AI course generation is unavailable right now. Please try again later.",
             )
-
-            # Copy quests from seeded course 1 as fallback (same connection)
-            seed_quests = conn.execute(
-                'SELECT * FROM ai_quests WHERE course_id = 1 ORDER BY "order" ASC'
-            ).fetchall()
-
-            if seed_quests:
-                total_xp = 0
-                for sq in seed_quests:
-                    cursor.execute("""
-                        INSERT INTO ai_quests (course_id, title, story, topic, difficulty_rank, xp_reward, correct_answer, hint, "order")
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        course["id"],
-                        sq["title"],
-                        sq["story"],
-                        sq["topic"],
-                        sq["difficulty_rank"],
-                        sq["xp_reward"],
-                        sq["correct_answer"],
-                        sq["hint"],
-                        sq["order"],
-                    ))
-                    total_xp += sq["xp_reward"]
-                cursor.execute("UPDATE ai_courses SET total_xp = ? WHERE id = ?", (total_xp, course["id"]))
-            conn.commit()
-            conn.close()
-            return database.get_course(course["id"])
+            return database.get_course(course["id"], user["id"])
 
         # Update course with generated data
         course_title = result.get("title", "Untitled Course")[:200]
@@ -495,7 +521,7 @@ async def api_generate_course(req: GenerateCourseRequest):
         conn.close()
 
         # Return the full course
-        return database.get_course(course["id"])
+        return database.get_course(course["id"], user["id"])
 
     except HTTPException:
         raise
@@ -510,24 +536,24 @@ async def api_generate_course(req: GenerateCourseRequest):
 
 
 @app.get("/api/ai/courses")
-async def api_list_courses():
-    """List all AI-generated courses."""
-    return database.get_courses()
+async def api_list_courses(user=Depends(current_user)):
+    """List the user's AI-generated courses."""
+    return database.get_courses(user["id"])
 
 
 @app.get("/api/ai/courses/{course_id}")
-async def api_get_course(course_id: int):
+async def api_get_course(course_id: int, user=Depends(current_user)):
     """Get a course with all its quests (correct_answer hidden unless completed)."""
-    course = database.get_course(course_id)
+    course = database.get_course(course_id, user["id"])
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     return course
 
 
 @app.get("/api/ai/courses/{course_id}/stats")
-async def api_get_course_stats(course_id: int):
+async def api_get_course_stats(course_id: int, user=Depends(current_user)):
     """Get course completion stats."""
-    course = database.get_course(course_id)
+    course = database.get_course(course_id, user["id"])
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     stats = database.get_course_stats(course_id)
@@ -535,9 +561,9 @@ async def api_get_course_stats(course_id: int):
 
 
 @app.post("/api/ai/quests/{quest_id}/answer")
-async def api_answer_quest(quest_id: int, req: AnswerQuestRequest):
+async def api_answer_quest(quest_id: int, req: AnswerQuestRequest, user=Depends(current_user)):
     """Submit an answer to a quest. Checks via AI, awards XP if correct."""
-    quest = database.get_quest(quest_id)
+    quest = database.get_quest(quest_id, user["id"])
     if not quest:
         raise HTTPException(status_code=404, detail="Quest not found")
 
@@ -550,7 +576,7 @@ async def api_answer_quest(quest_id: int, req: AnswerQuestRequest):
     feedback = result.get("feedback", "")
 
     # Record attempt and possibly mark completed
-    attempt_result = database.complete_quest(quest_id, req.answer, is_correct, feedback)
+    attempt_result = database.complete_quest(quest_id, req.answer, is_correct, feedback, user["id"])
     if "error" in attempt_result:
         raise HTTPException(status_code=500, detail=attempt_result["error"])
 
@@ -560,9 +586,9 @@ async def api_answer_quest(quest_id: int, req: AnswerQuestRequest):
 
     # Award XP to user if correct
     if xp_earned > 0:
-        xp_result = database.update_user_xp(xp_earned)
+        xp_result = database.update_user_xp(user["id"], xp_earned)
         level_up = xp_result.get("level_up", False)
-        fresh_user = database.get_user()
+        fresh_user = database.get_user(user["id"])
 
     return {
         "correct": is_correct,
@@ -574,9 +600,9 @@ async def api_answer_quest(quest_id: int, req: AnswerQuestRequest):
 
 
 @app.post("/api/ai/quests/{quest_id}/hint")
-async def api_get_quest_hint(quest_id: int):
+async def api_get_quest_hint(quest_id: int, user=Depends(current_user)):
     """Generate an AI hint for a quest."""
-    quest = database.get_quest(quest_id)
+    quest = database.get_quest(quest_id, user["id"])
     if not quest:
         raise HTTPException(status_code=404, detail="Quest not found")
 
@@ -602,37 +628,37 @@ TUTOR_TURN_MASTERY = 8
 
 
 @app.get("/api/tutor/sessions")
-async def api_list_tutor_sessions():
-    """List saved tutor sessions for the sidebar."""
-    return database.get_tutor_sessions()
+async def api_list_tutor_sessions(user=Depends(current_user)):
+    """List the user's saved tutor sessions for the sidebar."""
+    return database.get_tutor_sessions(user["id"])
 
 
 @app.post("/api/tutor/sessions")
-async def api_start_tutor_session(req: StartTutorRequest):
+async def api_start_tutor_session(req: StartTutorRequest, user=Depends(current_user)):
     """Start a session for a topic: create it and generate the tutor's opening."""
     topic = req.topic.strip()
     if not topic:
         raise HTTPException(status_code=400, detail="Topic is required")
 
-    session = database.create_tutor_session(topic)
+    session = database.create_tutor_session(user["id"], topic)
     opening = await tutor_open(topic)
     database.add_tutor_message(session["id"], "assistant", opening)
-    return database.get_tutor_session(session["id"])
+    return database.get_tutor_session(session["id"], user["id"])
 
 
 @app.get("/api/tutor/sessions/{session_id}")
-async def api_get_tutor_session(session_id: int):
+async def api_get_tutor_session(session_id: int, user=Depends(current_user)):
     """Get a session with its full message history (resume)."""
-    session = database.get_tutor_session(session_id)
+    session = database.get_tutor_session(session_id, user["id"])
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
 
 
 @app.post("/api/tutor/sessions/{session_id}/message")
-async def api_tutor_message(session_id: int, req: TutorMessageRequest):
+async def api_tutor_message(session_id: int, req: TutorMessageRequest, user=Depends(current_user)):
     """Send a learner message; get the tutor's reply plus any XP/mastery update."""
-    session = database.get_tutor_session(session_id)
+    session = database.get_tutor_session(session_id, user["id"])
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -643,14 +669,14 @@ async def api_tutor_message(session_id: int, req: TutorMessageRequest):
     # Record the learner's message, then ask the tutor for its reply.
     database.add_tutor_message(session_id, "user", content)
     history = database.get_tutor_messages(session_id)
-    reply = await tutor_continue(history)
+    reply = await tutor_continue(history, advanced=req.advanced)
     database.add_tutor_message(session_id, "assistant", reply)
 
     # Reward engagement: streak + a little XP + topic mastery (heuristic).
-    database.update_streak()
-    xp_result = database.update_user_xp(TUTOR_TURN_XP)
+    database.update_streak(user["id"])
+    xp_result = database.update_user_xp(user["id"], TUTOR_TURN_XP)
     mastery = database.bump_tutor_mastery(session_id, TUTOR_TURN_MASTERY)
-    fresh_user = database.get_user()
+    fresh_user = database.get_user(user["id"])
 
     return {
         "reply": reply,
@@ -662,9 +688,9 @@ async def api_tutor_message(session_id: int, req: TutorMessageRequest):
 
 
 @app.delete("/api/tutor/sessions/{session_id}")
-async def api_delete_tutor_session(session_id: int):
+async def api_delete_tutor_session(session_id: int, user=Depends(current_user)):
     """Delete a session and its messages."""
-    existed = database.delete_tutor_session(session_id)
+    existed = database.delete_tutor_session(session_id, user["id"])
     if not existed:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"deleted": True}

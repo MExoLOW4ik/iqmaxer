@@ -51,6 +51,16 @@ Your teaching style:
 Do NOT use any role-play game/RPG framing, ranks, "hunter", "quest", or fantasy lore in your teaching. You are simply a kind, real tutor. Respond in the same language the learner writes in."""
 
 
+# Advanced variant: same warmth and step-by-step routing, but graduate-level rigor.
+ADVANCED_TUTOR_SYSTEM_PROMPT = TUTOR_SYSTEM_PROMPT + """
+
+ADVANCED MODE IS ON. The learner wants depth:
+- Assume university/graduate-level background. Use rigorous notation and proper terminology (e.g. operators, tensors, measure-theoretic language, formal definitions) where appropriate.
+- Go deep: derive results, state assumptions precisely, and connect to the broader theory.
+- Still teach ONE step at a time and ask a guiding question — depth does not mean dumping the full derivation at once. Lead the learner through it.
+- Remain warm and encouraging; rigor is not coldness."""
+
+
 # ── LLM call ─────────────────────────────────────────────────────────────────
 
 async def _call(messages: list[dict], model: str) -> Optional[str]:
@@ -97,13 +107,14 @@ async def _call(messages: list[dict], model: str) -> Optional[str]:
     return None
 
 
-def _build_messages(history: list[dict]) -> list[dict]:
+def _build_messages(history: list[dict], advanced: bool = False) -> list[dict]:
     """Prepend the system prompt to the stored conversation history.
 
     `history` items are dicts with 'role' and 'content'. Stored system rows are
-    ignored — we always use the canonical TUTOR_SYSTEM_PROMPT.
+    ignored — we always use the canonical tutor system prompt (base or advanced).
     """
-    messages = [{"role": "system", "content": TUTOR_SYSTEM_PROMPT}]
+    system = ADVANCED_TUTOR_SYSTEM_PROMPT if advanced else TUTOR_SYSTEM_PROMPT
+    messages = [{"role": "system", "content": system}]
     for m in history:
         role = m.get("role")
         if role in ("user", "assistant"):
@@ -113,22 +124,22 @@ def _build_messages(history: list[dict]) -> list[dict]:
 
 # ── Public API ───────────────────────────────────────────────────────────────
 
-async def open_session(topic: str) -> str:
+async def open_session(topic: str, advanced: bool = False) -> str:
     """Generate the tutor's warm opening message for a new topic."""
     history = [{
         "role": "user",
         "content": f"I'd like to learn about: {topic}. Please start teaching me.",
     }]
-    return await _reply(history, fallback=_fallback_opening(topic))
+    return await _reply(history, fallback=_fallback_opening(topic), advanced=advanced)
 
 
-async def continue_session(history: list[dict]) -> str:
+async def continue_session(history: list[dict], advanced: bool = False) -> str:
     """Generate the tutor's next reply given the full conversation history."""
-    return await _reply(history, fallback=_fallback_reply())
+    return await _reply(history, fallback=_fallback_reply(), advanced=advanced)
 
 
-async def _reply(history: list[dict], fallback: str) -> str:
-    messages = _build_messages(history)
+async def _reply(history: list[dict], fallback: str, advanced: bool = False) -> str:
+    messages = _build_messages(history, advanced)
     raw = await _call(messages, PRIMARY_MODEL)
     if raw is None:
         raw = await _call(messages, FALLBACK_MODEL)
