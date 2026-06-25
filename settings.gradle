@@ -1,0 +1,2 @@
+rootProject.name = 'iQmaxer'
+include ':app'
