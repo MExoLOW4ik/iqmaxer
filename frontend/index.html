@@ -380,6 +380,238 @@ a:hover{color:#90e0ef}
   100%{opacity:1;transform:translateX(-50%) translateY(0)}
 }
 
+/* ========== NEW SECTIONS: MATERIALS / TESTS / ASSIGNMENTS ========== */
+
+.material-grid, .test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.material-card, .test-card, .assign-card {
+  padding: 18px 20px; margin-bottom: 0;
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.material-card:hover, .test-card:hover, .assign-card:hover {
+  border-color: #2a2a5e; transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.material-card-studied {
+  opacity: 0.6;
+}
+.material-card-studied .material-card-title::after {
+  content: ' ✅';
+  font-size: .8rem;
+}
+.material-card-top, .test-card-top, .assign-card-top {
+  display: flex; align-items: center; gap: 12px;
+}
+.material-card-title, .test-card-title, .assign-card-title {
+  font-weight: 600; font-size: .95rem; flex: 1;
+}
+.material-card-meta, .test-card-meta, .assign-card-meta {
+  display: flex; align-items: center; gap: 16px; font-size: .8rem; color: #888;
+}
+.material-card-desc, .test-card-desc, .assign-card-desc {
+  font-size: .8rem; color: #666; line-height: 1.4;
+}
+
+/* ===== STUDY BUTTON ===== */
+.study-btn {
+  margin-top: 8px; align-self: flex-start;
+}
+.study-btn:disabled {
+  opacity: 0.4; cursor: not-allowed;
+}
+
+/* ===== QUIZ ===== */
+.quiz-question {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  background: rgba(17,17,40,0.6);
+  border: 1px solid #1a1a3e;
+  border-radius: 12px;
+}
+.quiz-question-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.quiz-question-number {
+  font-weight: 800; font-size: .8rem;
+  color: #48cae4; background: rgba(0,180,216,0.1);
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.quiz-question-text {
+  font-weight: 600; font-size: .95rem; flex: 1;
+}
+
+.quiz-options {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.quiz-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(17,17,40,0.4);
+  border: 1px solid #1a1a3e;
+  cursor: pointer;
+  transition: all .2s;
+  font-size: .9rem;
+}
+.quiz-option:hover {
+  border-color: #2a2a5e;
+  background: rgba(0,180,216,0.05);
+}
+.quiz-option .radio-indicator {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #1a1a3e;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all .2s;
+  font-size: .7rem; color: transparent;
+}
+.quiz-option.selected {
+  border-color: #00b4d8;
+  background: rgba(0,180,216,0.1);
+}
+.quiz-option.selected .radio-indicator {
+  border-color: #00b4d8;
+  background: #00b4d8;
+  color: #fff;
+}
+.quiz-option.correct {
+  border-color: #4ade80;
+  background: rgba(74,222,128,0.1);
+}
+.quiz-option.correct .radio-indicator {
+  border-color: #4ade80;
+  background: #4ade80;
+  color: #fff;
+}
+.quiz-option.wrong {
+  border-color: #ef4444;
+  background: rgba(239,68,68,0.1);
+}
+.quiz-option.wrong .radio-indicator {
+  border-color: #ef4444;
+  background: #ef4444;
+  color: #fff;
+}
+.quiz-option.disabled {
+  cursor: default; pointer-events: none;
+}
+
+/* ===== QUIZ RESULT ===== */
+.quiz-result {
+  text-align: center;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.quiz-result-score {
+  font-size: 2.5rem; font-weight: 900;
+  margin-bottom: 4px;
+}
+.quiz-result-score.pass { color: #4ade80; }
+.quiz-result-score.fail { color: #ef4444; }
+.quiz-result-label {
+  font-size: 1rem; font-weight: 600; margin-bottom: 4px;
+}
+.quiz-result-label.pass { color: #4ade80; }
+.quiz-result-label.fail { color: #ef4444; }
+.quiz-result-xp {
+  font-size: .9rem; color: #00b4d8; margin-top: 8px;
+}
+.quiz-result-detail {
+  font-size: .8rem; color: #888; margin-top: 4px;
+}
+
+/* ===== ASSIGNMENT STATUS BADGE ===== */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 99px;
+  font-size: .75rem; font-weight: 600;
+}
+.status-badge.pending {
+  background: rgba(251,191,36,0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,0.3);
+}
+.status-badge.completed {
+  background: rgba(74,222,128,0.1);
+  color: #4ade80;
+  border: 1px solid rgba(74,222,128,0.3);
+}
+
+/* ========== AI COURSES ========== */
+.course-card{
+  padding:18px 20px;margin-bottom:12px;cursor:pointer;
+  display:flex;flex-direction:column;gap:10px;
+}
+.course-card:hover{
+  border-color:#2a2a5e;transform:translateY(-2px);
+  box-shadow:0 4px 25px rgba(0,180,216,0.12);
+}
+.course-card-top{display:flex;align-items:center;gap:12px}
+.course-card-title{font-weight:600;font-size:.95rem;flex:1}
+.course-card-desc{font-size:.8rem;color:#666;line-height:1.4}
+.course-card-meta{display:flex;align-items:center;gap:16px;font-size:.8rem;color:#888;flex-wrap:wrap}
+.course-card-progress{width:100%}
+.course-card-progress .xp-bar-wrap{height:8px}
+.course-card-pct{color:#00b4d8;font-weight:600;font-size:.75rem;white-space:nowrap}
+
+.quest-card{
+  padding:14px 16px;margin-bottom:8px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;
+  background:rgba(17,17,40,0.6);border:1px solid #1a1a3e;
+  border-radius:12px;transition:all .3s ease;
+}
+.quest-card:hover{border-color:#2a2a5e;transform:translateX(2px)}
+.quest-card.completed{opacity:0.6}
+.quest-card-info{flex:1;min-width:0}
+.quest-card-title{font-size:.9rem;font-weight:500}
+.quest-card-xp{font-size:.75rem;color:#888}
+.quest-card-status{font-size:.75rem;white-space:nowrap}
+.quest-card-status.done{color:#4ade80}
+.quest-card-status.pending{color:#fbbf24}
+
+.quest-detail{line-height:1.7}
+.quest-story{
+  font-size:1rem;color:#e0e0f0;
+  text-shadow:0 0 20px rgba(0,180,216,0.05);
+  padding:20px;border-radius:12px;
+  background:rgba(10,10,30,0.7);border:1px solid #1a1a3e;
+  border-left:3px solid #00b4d8;
+  margin-bottom:16px;white-space:pre-wrap;
+}
+.quest-detail-meta{display:flex;align-items:center;gap:16px;font-size:.85rem;color:#888;margin-bottom:16px;flex-wrap:wrap}
+.answer-input{
+  width:100%;padding:14px 16px;border-radius:10px;
+  background:rgba(17,17,40,0.8);border:1px solid #2a2a5e;
+  color:#e0e0f0;font-family:inherit;font-size:.95rem;
+  transition:border-color .3s;outline:none;
+}
+.answer-input:focus{border-color:#00b4d8;box-shadow:0 0 15px rgba(0,180,216,0.15)}
+.feedback-correct{
+  padding:14px 18px;border-radius:10px;
+  background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);
+  color:#4ade80;font-size:.9rem;margin-bottom:16px;
+}
+.feedback-wrong{
+  padding:14px 18px;border-radius:10px;
+  background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+  color:#ef4444;font-size:.9rem;margin-bottom:16px;
+}
+.hint-box{
+  padding:14px 18px;border-radius:10px;
+  background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.25);
+  color:#60a5fa;font-size:.85rem;margin-top:12px;
+  animation:fadeIn .3s ease;
+}
+.generating{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1} 50%{opacity:0.5}}
 /* ========== RESPONSIVE ========== */
 @media(max-width:768px){
   html{font-size:14px}
@@ -440,7 +672,7 @@ a:hover{color:#90e0ef}
   </div>
   <div class="hud-right">
     <span class="hud-streak" id="hudStreak">🔥 <span id="hudStreakCount">0</span></span>
-    <button class="nav-icon" onclick="navigate('/create')" title="New Goal">⚡</button>
+    <button class="nav-icon" onclick="navigate('/ai/new')" title="New Course">⚡</button>
     <button class="nav-icon" onclick="navigate('/')" title="Dashboard">🏠</button>
   </div>
 </header>
@@ -462,11 +694,17 @@ a:hover{color:#90e0ef}
   <a href="#/" data-nav="dashboard">
     <span class="nav-icon">🏠</span>Home
   </a>
-  <a href="#/goals" data-nav="goals">
-    <span class="nav-icon">🎯</span>Goals
+  <a href="#/materials" data-nav="materials">
+    <span class="nav-icon">📚</span>Learn
   </a>
-  <a href="#/create" data-nav="create">
-    <span class="nav-icon">⚡</span>New
+  <a href="#/ai" data-nav="ai">
+    <span class="nav-icon">🧠</span>AI
+  </a>
+  <a href="#/tests" data-nav="tests">
+    <span class="nav-icon">📝</span>Tests
+  </a>
+  <a href="#/assignments" data-nav="assignments">
+    <span class="nav-icon">✍️</span>Tasks
   </a>
   <a href="#/achievements" data-nav="achievements">
     <span class="nav-icon">🏆</span>Achievements
@@ -485,12 +723,27 @@ let state = {
   daily: [],
   history: [],
   achievements: [],
+  materials: [],
+  currentMaterial: null,
+  tests: [],
+  currentTest: null,
+  testResult: null,
+  assignments: [],
   currentGoal: null,
+  courses: [],
+  currentCourse: null,
+  currentQuest: null,
   loading: false,
   error: null,
 };
 
 // ===================== API =====================
+const API_BASE = (() => {
+  const p = window.location.pathname;
+  // If served under a subpath like /iqmaxer/, detect it
+  return p.replace(/\/+$/, '') + '/api';
+})();
+
 const api = {
   async get(url, opts = {}) {
     const r = await fetch(url, {
@@ -505,14 +758,31 @@ const api = {
     }
     return r.json();
   },
-  getUser:        () => api.get('/api/user'),
-  getGoals:       () => api.get('/api/goals'),
-  getGoal:        id => api.get(`/api/goals/${id}`),
-  getDaily:       () => api.get('/api/daily'),
-  getHistory:     () => api.get('/api/history'),
-  getAchievements:() => api.get('/api/achievements'),
-  createGoal:     data => api.get('/api/goals', { method: 'POST', body: JSON.stringify(data) }),
-  completeQuest:  id => api.get(`/api/quests/${id}`, { method: 'PATCH', body: JSON.stringify({ completed: true }) }),
+  getUser:        () => api.get(API_BASE + '/user'),
+  getGoals:       () => api.get(API_BASE + '/goals'),
+  getGoal:        id => api.get(API_BASE + '/goals/' + id),
+  getDaily:       () => api.get(API_BASE + '/daily'),
+  getHistory:     () => api.get(API_BASE + '/history'),
+  getAchievements:() => api.get(API_BASE + '/achievements'),
+  createGoal:     data => api.get(API_BASE + '/goals', { method: 'POST', body: JSON.stringify(data) }),
+  completeQuest:  id => api.get(API_BASE + '/quests/' + id, { method: 'PATCH', body: JSON.stringify({ completed: true }) }),
+  // Materials
+  getMaterials: () => api.get(API_BASE + '/materials'),
+  getMaterial: id => api.get(API_BASE + '/materials/' + id),
+  studyMaterial: id => api.get(API_BASE + '/materials/' + id + '/study', { method: 'POST' }),
+  // Tests
+  getTests: () => api.get(API_BASE + '/tests'),
+  getTest: id => api.get(API_BASE + '/tests/' + id),
+  submitTest: (id, answers) => api.get(API_BASE + '/tests/' + id + '/submit', { method: 'POST', body: JSON.stringify({answers}) }),
+  // Assignments
+  getAssignments: () => api.get(API_BASE + '/assignments'),
+  completeAssignment: id => api.get(API_BASE + '/assignments/' + id + '/complete', { method: 'PATCH' }),
+  // AI Courses
+  getCourses: () => api.get(API_BASE + '/ai/courses'),
+  getCourse: id => api.get(API_BASE + '/ai/courses/' + id),
+  generateCourse: goal => api.get(API_BASE + '/ai/courses/generate', { method: 'POST', body: JSON.stringify({goal}) }),
+  submitQuestAnswer: (id, answer) => api.get(API_BASE + '/ai/quests/' + id + '/answer', { method: 'POST', body: JSON.stringify({answer}) }),
+  getQuestHint: id => api.get(API_BASE + '/ai/quests/' + id + '/hint', { method: 'POST' }),
 };
 
 // ===================== RANK HELPERS =====================
@@ -655,7 +925,7 @@ function renderDashboard() {
   html += renderPlayerCard(user);
 
   // New Goal button
-  html += `<div style="margin-bottom:20px"><button class="btn btn-primary" onclick="navigate('/create')">⚡ New Goal</button></div>`;
+  html += `<div style="margin-bottom:20px"><button class="btn btn-primary" onclick="navigate('/ai/new')">⚡ New Goal</button></div>`;
 
   // Active Goals
   if (activeGoals.length > 0) {
@@ -738,7 +1008,7 @@ function renderGoals() {
       <div class="empty-state">
         <div class="icon">🎯</div>
         <div class="text">No goals yet. Create one!</div>
-        <button class="btn btn-primary" style="margin-top:12px" onclick="navigate('/create')">⚡ New Goal</button>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="navigate('/ai/new')">⚡ New Goal</button>
       </div>
     `);
   }
@@ -768,7 +1038,7 @@ function renderGoals() {
   }
   html += `</div>`;
 
-  html += `<div style="margin-top:20px"><button class="btn btn-primary" onclick="navigate('/create')">⚡ New Goal</button></div>`;
+  html += `<div style="margin-top:20px"><button class="btn btn-primary" onclick="navigate('/ai/new')">⚡ New Goal</button></div>`;
 
   renderPage(html);
 }
@@ -944,6 +1214,712 @@ function renderAchievements() {
   renderPage(html);
 }
 
+// ===================== MATERIALS =====================
+
+function renderMaterials() {
+  const { materials } = state;
+  if (!materials) return renderPage(`<div class="loading">Loading...</div>`);
+
+  if (materials.length === 0) {
+    return renderPage(`
+      <div class="section-title"><span class="icon">📚</span> Study Materials</div>
+      <div class="empty-state">
+        <div class="icon">📚</div>
+        <div class="text">No materials available yet.</div>
+      </div>
+    `);
+  }
+
+  let html = `<div class="section-title"><span class="icon">📚</span> Study Materials (${materials.length})</div>`;
+  html += `<div class="material-grid">`;
+
+  for (const m of materials) {
+    const r = getRank(m.difficulty_rank || m.xp_reward || 0);
+    const studied = m.studied || m.studied_at;
+    html += `
+      <div class="material-card glass ${studied ? 'material-card-studied' : ''}" onclick="navigate('/materials/${m.id}')">
+        <div class="material-card-top">
+          <span class="rank-badge rank-${r} sm">${r}</span>
+          <span class="material-card-title">${escapeHtml(m.title)}</span>
+        </div>
+        ${m.content ? `<div class="material-card-desc">${escapeHtml(m.content.length > 120 ? m.content.slice(0, 120) + '...' : m.content)}</div>` : ''}
+        <div class="material-card-meta">
+          <span>⭐ ${m.xp_reward || 0} XP</span>
+          <span>${studied ? '✅ Studied' : '📖 Not studied'}</span>
+        </div>
+      </div>`;
+  }
+  html += `</div>`;
+  renderPage(html);
+}
+
+async function renderMaterialDetail(id) {
+  renderPage(`<div class="loading">Loading material...</div>`);
+  try {
+    const material = await api.getMaterial(id);
+    state.currentMaterial = material;
+    renderMaterialDetailHTML(material);
+  } catch (e) {
+    renderPage(`<div class="error-msg">❌ Failed to load material: ${escapeHtml(e.message)}</div>`);
+  }
+}
+
+function renderMaterialDetailHTML(material) {
+  const r = getRank(material.difficulty_rank || material.xp_reward || 0);
+  const studied = material.studied || material.studied_at;
+
+  let html = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-ghost" onclick="navigate('/materials')">← Back to Materials</button>
+    </div>
+    <div class="section-title">
+      <span class="rank-badge rank-${r} sm">${r}</span>
+      ${escapeHtml(material.title)}
+    </div>`;
+
+  // Material content
+  html += `<div class="glass" style="margin-bottom:20px;line-height:1.7">`;
+  html += `<div style="white-space:pre-wrap;font-size:.95rem">${escapeHtml(material.content || 'No content.')}</div>`;
+  html += `</div>`;
+
+  // Meta
+  html += `<div class="glass" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">`;
+  html += `<span style="color:#888">⭐ <strong style="color:#00b4d8">${material.xp_reward || 0} XP</strong> reward</span>`;
+  html += `<span style="color:#888">Subject: ${escapeHtml(material.subject || 'General')}</span>`;
+  html += `</div>`;
+
+  // Study button
+  if (!studied) {
+    html += `<button class="btn btn-primary study-btn" onclick="handleStudyMaterial(${material.id}, this)">✅ Mark as Studied</button>`;
+  } else {
+    html += `<div class="glass" style="text-align:center;color:#4ade80;font-weight:600">✅ You have studied this material</div>`;
+  }
+
+  renderPage(html);
+}
+
+async function handleStudyMaterial(id, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳ Studying...';
+  try {
+    const res = await api.studyMaterial(id);
+    notify(`✅ +${res.xp_awarded || 0} XP earned!`);
+    state.currentMaterial.studied = true;
+    // Update user
+    if (res.user) {
+      state.user = res.user;
+      updateHUD();
+    } else {
+      state.user = await api.getUser();
+      updateHUD();
+    }
+    // Re-render
+    renderMaterialDetailHTML(state.currentMaterial);
+  } catch (e) {
+    notify('❌ ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '✅ Mark as Studied';
+  }
+}
+
+// ===================== TESTS =====================
+
+function renderTests() {
+  const { tests } = state;
+  if (!tests) return renderPage(`<div class="loading">Loading...</div>`);
+
+  if (tests.length === 0) {
+    return renderPage(`
+      <div class="section-title"><span class="icon">📝</span> Tests</div>
+      <div class="empty-state">
+        <div class="icon">📝</div>
+        <div class="text">No tests available yet.</div>
+      </div>
+    `);
+  }
+
+  let html = `<div class="section-title"><span class="icon">📝</span> Tests (${tests.length})</div>`;
+  html += `<div class="test-grid">`;
+
+  for (const t of tests) {
+    const r = getRank(t.difficulty_rank || t.xp_reward || 0);
+    html += `
+      <div class="test-card glass" onclick="navigate('/tests/${t.id}')">
+        <div class="test-card-top">
+          <span class="rank-badge rank-${r} sm">${r}</span>
+          <span class="test-card-title">${escapeHtml(t.title)}</span>
+        </div>
+        ${t.description ? `<div class="test-card-desc">${escapeHtml(t.description)}</div>` : ''}
+        <div class="test-card-meta">
+          <span>⭐ ${t.xp_reward || 0} XP</span>
+          <span>🎯 Pass: ${t.pass_percent || 70}%</span>
+        </div>
+      </div>`;
+  }
+  html += `</div>`;
+  renderPage(html);
+}
+
+async function renderTestDetail(id) {
+  renderPage(`<div class="loading">Loading test...</div>`);
+  try {
+    const test = await api.getTest(id);
+    state.currentTest = test;
+    state.testResult = null;
+    renderTestDetailHTML(test, null);
+  } catch (e) {
+    renderPage(`<div class="error-msg">❌ Failed to load test: ${escapeHtml(e.message)}</div>`);
+  }
+}
+
+function renderTestDetailHTML(test, result) {
+  const r = getRank(test.difficulty_rank || test.xp_reward || 0);
+  const questions = test.questions || [];
+
+  let html = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-ghost" onclick="navigate('/tests')">← Back to Tests</button>
+    </div>
+    <div class="section-title">
+      <span class="rank-badge rank-${r} sm">${r}</span>
+      ${escapeHtml(test.title)}
+    </div>
+    ${test.description ? `<p style="color:#888;margin-bottom:16px;font-size:.9rem">${escapeHtml(test.description)}</p>` : ''}
+    <div class="glass" style="margin-bottom:20px;display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:#888">
+      <span>⭐ <strong style="color:#00b4d8">${test.xp_reward || 0} XP</strong></span>
+      <span>📝 <strong style="color:#48cae4">${questions.length}</strong> questions</span>
+      <span>🎯 Pass: <strong>${test.pass_percent || 70}%</strong></span>
+    </div>`;
+
+  // Result display
+  if (result) {
+    const passed = result.passed;
+    const scorePct = questions.length > 0 ? (result.score / result.total) * 100 : 0;
+    html += `
+      <div class="quiz-result glass ${passed ? 'pass' : 'fail'}">
+        <div class="quiz-result-score ${passed ? 'pass' : 'fail'}">${result.score}/${result.total}</div>
+        <div class="quiz-result-label ${passed ? 'pass' : 'fail'}">${passed ? '✅ PASSED' : '❌ FAILED'}</div>
+        <div class="quiz-result-detail">${scorePct.toFixed(0)}% — ${passed ? 'You passed the test!' : `Need ${test.pass_percent || 70}% to pass`}</div>
+        <div class="quiz-result-xp">+${result.xp_awarded || 0} XP earned</div>
+      </div>`;
+
+    // Show answers with correct/wrong highlighting
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const selectedIdx = (result.user_answers && result.user_answers[i] != null) ? result.user_answers[i] : -1;
+      const correctIdx = (result.correct_answers && result.correct_answers[i] != null) ? result.correct_answers[i] : -1;
+      const isCorrect = selectedIdx === correctIdx;
+
+      html += `
+        <div class="quiz-question">
+          <div class="quiz-question-header">
+            <span class="quiz-question-number">${i + 1}</span>
+            <span class="quiz-question-text">${escapeHtml(q.question || q.title || '')}</span>
+            <span style="font-size:.8rem;font-weight:700;${isCorrect ? 'color:#4ade80' : 'color:#ef4444'}">${isCorrect ? '✅' : '❌'}</span>
+          </div>
+          <div class="quiz-options">`;
+
+      for (let j = 0; j < (q.options || []).length; j++) {
+        let cls = 'quiz-option disabled';
+        if (j === correctIdx) cls += ' correct';
+        else if (j === selectedIdx && j !== correctIdx) cls += ' wrong';
+        const indicator = j === correctIdx ? '✓' : (j === selectedIdx ? '✗' : '');
+        html += `
+            <div class="${cls}">
+              <span class="radio-indicator">${indicator}</span>
+              <span>${escapeHtml(q.options[j])}</span>
+            </div>`;
+      }
+      html += `</div></div>`;
+    }
+  } else {
+    // Quiz interface — all questions at once
+    html += `<form id="quizForm" onsubmit="handleSubmitTest(event, ${test.id})">`;
+
+    // Hidden input to track selected answers
+    html += `<input type="hidden" name="answers_json" id="answersJson" value="">`;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      html += `
+        <div class="quiz-question" data-qidx="${i}">
+          <div class="quiz-question-header">
+            <span class="quiz-question-number">${i + 1}</span>
+            <span class="quiz-question-text">${escapeHtml(q.question || q.title || '')}</span>
+          </div>
+          <div class="quiz-options" data-qidx="${i}">`;
+
+      for (let j = 0; j < (q.options || []).length; j++) {
+        html += `
+            <div class="quiz-option" data-qidx="${i}" data-oidx="${j}" onclick="selectQuizOption(this)">
+              <span class="radio-indicator"></span>
+              <span>${escapeHtml(q.options[j])}</span>
+            </div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    html += `
+      <div style="margin-top:20px;text-align:center">
+        <button type="submit" class="btn btn-primary">📝 Submit Test</button>
+      </div>
+    </form>`;
+  }
+
+  renderPage(html);
+}
+
+// Quiz option selection
+window.selectQuizOption = function(el) {
+  const qidx = el.dataset.qidx;
+  // Deselect all options in this question
+  const container = el.closest('.quiz-question');
+  container.querySelectorAll('.quiz-option').forEach(opt => {
+    opt.classList.remove('selected');
+    opt.querySelector('.radio-indicator').textContent = '';
+  });
+  // Select clicked option
+  el.classList.add('selected');
+  el.querySelector('.radio-indicator').textContent = '●';
+};
+
+async function handleSubmitTest(event, testId) {
+  event.preventDefault();
+
+  const questions = document.querySelectorAll('.quiz-question');
+  const answers = [];
+
+  for (const q of questions) {
+    const selected = q.querySelector('.quiz-option.selected');
+    if (selected) {
+      answers.push(parseInt(selected.dataset.oidx));
+    } else {
+      answers.push(-1); // No answer selected
+    }
+  }
+
+  // Validate all answered
+  if (answers.some(a => a === -1)) {
+    notify('❌ Please answer all questions before submitting.');
+    return;
+  }
+
+  const btn = event.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = '⏳ Submitting...';
+
+  try {
+    const result = await api.submitTest(testId, answers);
+    state.testResult = result;
+    // Update user
+    if (result.user) {
+      state.user = result.user;
+      updateHUD();
+    } else {
+      state.user = await api.getUser();
+      updateHUD();
+    }
+    // Re-render with result
+    renderTestDetailHTML(state.currentTest, result);
+    notify(`🎯 ${result.passed ? 'Passed!' : 'Failed'} — ${result.score}/${result.total}`);
+  } catch (e) {
+    notify('❌ ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '📝 Submit Test';
+  }
+}
+
+// ===================== ASSIGNMENTS =====================
+
+function renderAssignments() {
+  const { assignments } = state;
+  if (!assignments) return renderPage(`<div class="loading">Loading...</div>`);
+
+  if (assignments.length === 0) {
+    return renderPage(`
+      <div class="section-title"><span class="icon">✍️</span> Tasks</div>
+      <div class="empty-state">
+        <div class="icon">✍️</div>
+        <div class="text">No assignments yet. Check back later!</div>
+      </div>
+    `);
+  }
+
+  let html = `<div class="section-title"><span class="icon">✍️</span> Tasks (${assignments.length})</div>`;
+
+  // Separate pending and completed
+  const pending = assignments.filter(a => a.status === 'pending' || a.status !== 'completed');
+  const completed = assignments.filter(a => a.status === 'completed');
+
+  if (pending.length > 0) {
+    html += `<div style="margin-bottom:12px;font-size:.85rem;color:#888">Pending (${pending.length})</div>`;
+    for (const a of pending) {
+      html += renderAssignmentCard(a);
+    }
+  }
+
+  if (completed.length > 0) {
+    html += `<div style="margin:20px 0 12px;font-size:.85rem;color:#555">Completed (${completed.length})</div>`;
+    for (const a of completed) {
+      html += renderAssignmentCard(a);
+    }
+  }
+
+  renderPage(html);
+}
+
+function renderAssignmentCard(a) {
+  const r = getRank(a.difficulty_rank || a.xp_reward || 0);
+  const isCompleted = a.status === 'completed';
+  const deadlineStr = a.deadline ? timeRemaining(a.deadline) : '';
+
+  return `
+    <div class="assign-card glass" style="${isCompleted ? 'opacity:0.6' : ''}">
+      <div class="assign-card-top">
+        <span class="rank-badge rank-${r} sm">${r}</span>
+        <span class="assign-card-title">${escapeHtml(a.title)}</span>
+        <span class="status-badge ${isCompleted ? 'completed' : 'pending'}">${isCompleted ? '✅ Done' : '⏳ Pending'}</span>
+      </div>
+      ${a.description ? `<div class="assign-card-desc">${escapeHtml(a.description)}</div>` : ''}
+      <div class="assign-card-meta">
+        <span>⭐ ${a.xp_reward || 0} XP</span>
+        ${deadlineStr ? `<span>🗓 ${deadlineStr}</span>` : ''}
+        <span>📂 ${escapeHtml(a.subject || 'General')}</span>
+      </div>
+      ${!isCompleted ? `<button class="btn btn-primary" style="margin-top:8px;align-self:flex-start" onclick="handleCompleteAssignment(${a.id}, this)">✅ Complete</button>` : ''}
+    </div>`;
+}
+
+async function handleCompleteAssignment(id, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳ Completing...';
+  try {
+    const res = await api.completeAssignment(id);
+    notify(`✅ +${res.xp_awarded || 0} XP earned!`);
+    // Update user
+    if (res.user) {
+      state.user = res.user;
+      updateHUD();
+    } else {
+      state.user = await api.getUser();
+      updateHUD();
+    }
+    // Re-fetch assignments
+    state.assignments = await api.getAssignments();
+    renderAssignments();
+  } catch (e) {
+    notify('❌ ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '✅ Complete';
+  }
+}
+
+// ===================== AI COURSES =====================
+
+function renderAICourses() {
+  const { courses } = state;
+  if (!courses) return renderPage(`<div class="loading">Loading...</div>`);
+
+  if (courses.length === 0) {
+    return renderPage(`
+      <div class="section-title"><span class="icon">🧠</span> AI Courses</div>
+      <div class="empty-state">
+        <div class="icon">🧠</div>
+        <div class="text">No AI courses yet. Generate your first one!</div>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="navigate('/ai/new')">🎯 New Course</button>
+      </div>
+    `);
+  }
+
+  let html = `<div class="section-title"><span class="icon">🧠</span> AI Courses (${courses.length})</div>`;
+  html += `<div style="margin-bottom:16px">`;
+
+  for (const c of courses) {
+    const rank = getRank(c.difficulty_rank || c.total_xp || 0);
+    const pct = c.total_quests > 0 ? (c.completed_quests || 0) / c.total_quests : 0;
+    html += `
+      <div class="course-card glass" onclick="navigate('/ai/${c.id}')">
+        <div class="course-card-top">
+          <span class="rank-badge rank-${rank} sm">${rank}</span>
+          <span class="course-card-title">${escapeHtml(c.title || c.goal || 'Untitled Course')}</span>
+          <span class="course-card-pct">${(pct*100).toFixed(0)}%</span>
+        </div>
+        ${c.description ? `<div class="course-card-desc">${escapeHtml(c.description)}</div>` : ''}
+        <div class="course-card-progress">
+          <div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:${(pct*100).toFixed(1)}%"></div></div>
+        </div>
+        <div class="course-card-meta">
+          <span>📚 ${c.completed_quests || 0}/${c.total_quests || 0} quests</span>
+          <span>⭐ ${c.earned_xp || 0}/${c.total_xp || 0} XP</span>
+          <span>${c.status === 'completed' ? '✅ Completed' : (c.status === 'in_progress' ? '📖 In Progress' : '📝 New')}</span>
+        </div>
+      </div>`;
+  }
+
+  html += `</div>`;
+  html += `<div style="margin-top:8px"><button class="btn btn-primary" onclick="navigate('/ai/new')">🎯 New Course</button></div>`;
+  renderPage(html);
+}
+
+function renderAINew() {
+  const html = `
+    <div class="section-title"><span class="icon">🧠</span> New AI Course</div>
+    <div class="system-msg">Describe what you want to learn. The system will generate a personalized course with quests.</div>
+    <form id="aiGenerateForm" onsubmit="handleGenerateCourse(event)" style="margin-top:16px">
+      <div class="form-group">
+        <label class="form-label" for="aiGoal">What do you want to learn?</label>
+        <textarea class="form-textarea" id="aiGoal" name="goal" placeholder="e.g. Learn advanced math, physics of motion, master Python web development..." rows="5" required style="min-height:120px;font-size:1rem"></textarea>
+      </div>
+      <div id="aiGenerateStatus" style="margin-bottom:16px"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn-primary" id="aiGenerateBtn">⚙️ Generate Course</button>
+        <button type="button" class="btn btn-ghost" onclick="navigate('/ai')">Cancel</button>
+      </div>
+    </form>`;
+  renderPage(html);
+}
+
+window.handleGenerateCourse = async function(event) {
+  event.preventDefault();
+  const form = event.target;
+  const goal = form.goal.value.trim();
+  if (!goal) return;
+
+  const btn = document.getElementById('aiGenerateBtn');
+  const status = document.getElementById('aiGenerateStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="generating">⚙️</span> Generating...';
+  // AI acknowledgment — shows immediately so user knows system understood
+  status.innerHTML = '<div style="text-align:center;padding:16px;color:#48cae4">' +
+    '<div style="font-size:1.2rem;margin-bottom:8px">🧠 System acknowledged</div>' +
+    '<div style="font-size:.95rem">"' + escapeHtml(goal) + '"</div>' +
+    '<div class="generating" style="margin-top:12px;font-size:.85rem;color:#888">⚙️ Preparing your course...</div>' +
+    '</div>';
+
+  try {
+    const course = await api.generateCourse(goal);
+    if (course && course.id) {
+      notify('✅ Course generated!');
+      navigate('/ai/' + course.id);
+    } else {
+      throw new Error('No course ID returned');
+    }
+  } catch (e) {
+    status.innerHTML = `<div style="text-align:center;padding:16px;color:#ef4444;font-size:.9rem">❌ ${escapeHtml(e.message)}</div>`;
+    btn.disabled = false;
+    btn.innerHTML = '⚙️ Generate Course';
+  }
+};
+
+async function renderAICourseDetail(id) {
+  renderPage(`<div class="loading">Loading course...</div>`);
+  try {
+    const course = await api.getCourse(id);
+    state.currentCourse = course;
+    renderAICourseDetailHTML(course);
+  } catch (e) {
+    renderPage(`<div class="error-msg">❌ Failed to load course: ${escapeHtml(e.message)}</div>`);
+  }
+}
+
+function renderAICourseDetailHTML(course) {
+  const rank = getRank(course.difficulty_rank || course.total_xp || 0);
+  const pct = course.total_quests > 0 ? (course.completed_quests || 0) / course.total_quests : 0;
+  const quests = course.quests || [];
+
+  let html = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-ghost" onclick="navigate('/ai')">← Back to Courses</button>
+    </div>
+    <div class="section-title">
+      <span class="rank-badge rank-${rank} sm">${rank}</span>
+      ${escapeHtml(course.title || course.goal || 'Course')}
+    </div>
+    ${course.description ? `<p style="color:#888;margin-bottom:16px;font-size:.9rem">${escapeHtml(course.description)}</p>` : ''}
+
+    <div class="glass" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;color:#888;margin-bottom:6px">
+        <span>Progress</span>
+        <span>${course.completed_quests || 0}/${course.total_quests || 0} quests · ${course.earned_xp || 0}/${course.total_xp || 0} XP</span>
+      </div>
+      <div class="xp-bar-wrap" style="height:14px">
+        <div class="xp-bar-fill" style="width:${(pct*100).toFixed(1)}%"></div>
+      </div>
+    </div>`;
+
+  // Quests
+  if (quests.length > 0) {
+    html += `<div class="section-title" style="margin-top:16px"><span class="icon">📋</span> Quests (${quests.length})</div>`;
+
+    // Sort by order if available
+    const sorted = [...quests].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    for (const q of sorted) {
+      const qr = getRank(q.difficulty_rank || q.xp_reward || 0);
+      const isCompleted = q.completed;
+      html += `
+        <div class="quest-card ${isCompleted ? 'completed' : ''}" onclick="navigate('/ai/${course.id}/quest/${q.id}')">
+          <span class="rank-badge rank-${qr} sm">${qr}</span>
+          <div class="quest-card-info">
+            <div class="quest-card-title">${escapeHtml(q.title)}</div>
+            <div class="quest-card-xp">+${q.xp_reward || 0} XP ${q.topic ? '· ' + escapeHtml(q.topic) : ''}</div>
+          </div>
+          <span class="quest-card-status ${isCompleted ? 'done' : 'pending'}">
+            ${isCompleted ? '✅ Done' : '⏳ Pending'}
+          </span>
+        </div>`;
+    }
+  } else {
+    html += `<div class="empty-state"><div class="icon">📋</div><div class="text">No quests in this course yet.</div></div>`;
+  }
+
+  html += `<div style="margin-top:16px"><button class="btn btn-ghost" onclick="navigate('/ai')">← Back to Courses</button></div>`;
+  renderPage(html);
+}
+
+async function renderAIQuestDetail(courseId, questId) {
+  renderPage(`<div class="loading">Loading quest...</div>`);
+  try {
+    // Load course to get quest data
+    const course = await api.getCourse(courseId);
+    state.currentCourse = course;
+    const quest = (course.quests || []).find(q => String(q.id) === String(questId));
+    if (!quest) throw new Error('Quest not found');
+    state.currentQuest = quest;
+    // Clear any previous hint/feedback
+    state._questHint = null;
+    state._questFeedback = null;
+    renderAIQuestDetailHTML(quest);
+  } catch (e) {
+    renderPage(`<div class="error-msg">❌ Failed to load quest: ${escapeHtml(e.message)}</div>`);
+  }
+}
+
+function renderAIQuestDetailHTML(quest) {
+  const qr = getRank(quest.difficulty_rank || quest.xp_reward || 0);
+  const isCompleted = quest.completed;
+  const hint = state._questHint || quest.hint || null;
+  const feedback = state._questFeedback || null;
+
+  let html = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-ghost" onclick="navigate('/ai/${state.currentCourse ? state.currentCourse.id : ''}')">← Back to Course</button>
+    </div>
+    <div class="section-title">
+      <span class="rank-badge rank-${qr} sm">${qr}</span>
+      ${escapeHtml(quest.title)}
+    </div>
+    <div class="quest-detail-meta">
+      <span>⭐ <strong style="color:#00b4d8">${quest.xp_reward || 0} XP</strong></span>
+      ${quest.topic ? `<span>📖 ${escapeHtml(quest.topic)}</span>` : ''}
+      ${isCompleted ? `<span style="color:#4ade80">✅ Completed</span>` : `<span style="color:#fbbf24">⏳ Not completed</span>`}
+      ${quest.attempts > 0 ? `<span>Attempts: ${quest.attempts}</span>` : ''}
+    </div>
+
+    <div class="quest-story">${escapeHtml(quest.story || 'No story available.')}</div>`;
+
+  // Feedback display
+  if (feedback) {
+    html += `<div class="${feedback.correct ? 'feedback-correct' : 'feedback-wrong'}">
+      ${feedback.correct ? '✅' : '❌'} ${escapeHtml(feedback.feedback || (feedback.correct ? 'Correct!' : 'Incorrect.'))}
+    </div>`;
+  }
+
+  // Hint display
+  if (hint) {
+    html += `<div class="hint-box">💡 ${escapeHtml(hint)}</div>`;
+  }
+
+  // If already completed, show result and don't show submit form
+  if (isCompleted) {
+    html += `<div class="glass" style="text-align:center;padding:16px;margin-top:16px">
+      <div style="color:#4ade80;font-weight:600;font-size:1rem">✅ Quest Completed</div>
+      ${quest.correct_answer ? `<div style="color:#888;font-size:.85rem;margin-top:8px">Correct answer: <strong style="color:#e0e0f0">${escapeHtml(quest.correct_answer)}</strong></div>` : ''}
+    </div>`;
+  } else {
+    // Answer form
+    html += `
+      <div class="glass" style="margin-top:16px">
+        <form id="questAnswerForm" onsubmit="handleQuestAnswer(${quest.id}, event)">
+          <div class="form-group">
+            <label class="form-label" for="questAnswer">Your Answer</label>
+            <textarea class="answer-input" id="questAnswer" name="answer" placeholder="Type your answer here..." rows="3" required></textarea>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button type="submit" class="btn btn-primary" id="questSubmitBtn">📝 Submit Answer</button>
+            <button type="button" class="btn btn-outline" onclick="handleQuestHint(${quest.id})">💡 Get Hint</button>
+          </div>
+        </form>
+      </div>`;
+  }
+
+  html += `<div style="margin-top:16px"><button class="btn btn-ghost" onclick="navigate('/ai/${state.currentCourse ? state.currentCourse.id : ''}')">← Back to Course</button></div>`;
+  renderPage(html);
+}
+
+window.handleQuestAnswer = async function(questId, event) {
+  event.preventDefault();
+  const form = event.target;
+  const answer = form.answer.value.trim();
+  if (!answer) return;
+
+  const btn = document.getElementById('questSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Submitting...';
+
+  try {
+    const res = await api.submitQuestAnswer(questId, answer);
+    state._questFeedback = { correct: res.correct, feedback: res.feedback };
+    // Update user
+    if (res.user) {
+      state.user = res.user;
+      updateHUD();
+    } else {
+      state.user = await api.getUser();
+      updateHUD();
+    }
+    // Update quest in state
+    if (state.currentQuest) {
+      state.currentQuest.completed = res.correct || state.currentQuest.completed;
+      state.currentQuest.attempts = (state.currentQuest.attempts || 0) + 1;
+    }
+    // Show XP floating
+    if (res.xp_earned > 0) {
+      const rect = btn.getBoundingClientRect();
+      showFloatingXp(rect.left, rect.top - 20, res.xp_earned);
+    }
+    // Re-render
+    renderAIQuestDetailHTML(state.currentQuest);
+
+    if (res.correct) {
+      notify(`✅ +${res.xp_earned || 0} XP earned!`);
+    }
+    if (res.level_up) {
+      const oldLevel = res.old_level || 1;
+      const oldRank = res.old_rank || 'E';
+      showLevelUp(res.user || state.user, oldLevel, oldRank);
+    }
+  } catch (e) {
+    notify('❌ ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '📝 Submit Answer';
+  }
+};
+
+window.handleQuestHint = async function(questId) {
+  const hintBtn = document.activeElement;
+  if (hintBtn) hintBtn.disabled = true;
+
+  try {
+    const res = await api.getQuestHint(questId);
+    state._questHint = res.hint || 'No hint available.';
+    renderAIQuestDetailHTML(state.currentQuest);
+  } catch (e) {
+    notify('❌ ' + e.message);
+    if (hintBtn) hintBtn.disabled = false;
+  }
+};
+
 // ===================== HANDLERS =====================
 
 async function handleQuestClick(el, event) {
@@ -1037,11 +2013,34 @@ function navigate(path) {
 
 function getRoute(hash) {
   hash = hash.slice(1) || '/';
+  // Match /ai/{courseId}/quest/{questId}
+  const aiQuestMatch = hash.match(/^\/ai\/(\d+)\/quest\/(\d+)$/);
+  if (aiQuestMatch) return { page: 'ai-quest', params: { courseId: aiQuestMatch[1], questId: aiQuestMatch[2] } };
+  // Match /ai/{id}
+  const aiCourseMatch = hash.match(/^\/ai\/(\d+)$/);
+  if (aiCourseMatch) return { page: 'ai-course', params: { id: aiCourseMatch[1] } };
+  // Match /ai/new
+  if (hash === '/ai/new') return { page: 'ai-new', params: {} };
   // Match /goal/{id}
   const goalMatch = hash.match(/^\/goal\/(\d+)$/);
   if (goalMatch) return { page: 'goal', params: { id: goalMatch[1] } };
+  // Match /materials/{id}
+  const matMatch = hash.match(/^\/materials\/(\d+)$/);
+  if (matMatch) return { page: 'material-detail', params: { id: matMatch[1] } };
+  // Match /tests/{id}
+  const testMatch = hash.match(/^\/tests\/(\d+)$/);
+  if (testMatch) return { page: 'test-detail', params: { id: testMatch[1] } };
   // Match other pages
-  const pages = { '/': 'dashboard', '/goals': 'goals', '/create': 'create', '/achievements': 'achievements' };
+  const pages = {
+    '/': 'dashboard',
+    '/goals': 'goals',
+    '/create': 'create-redirect',
+    '/achievements': 'achievements',
+    '/materials': 'materials',
+    '/tests': 'tests',
+    '/assignments': 'assignments',
+    '/ai': 'ai-courses',
+  };
   return { page: pages[hash] || 'dashboard', params: {} };
 }
 
@@ -1063,7 +2062,12 @@ function updateBottomNav() {
   const hash = location.hash.slice(1) || '/';
   document.querySelectorAll('.bottom-nav a').forEach(a => {
     const href = a.getAttribute('href').slice(1); // remove #
-    a.classList.toggle('active', href === hash || (hash.startsWith('/goal') && href === '/goals'));
+    // Highlight if exact match or if we're on a detail page whose parent matches
+    const isDetail = (href === '/materials' && hash.startsWith('/materials')) ||
+                     (href === '/tests' && hash.startsWith('/tests')) ||
+                     (href === '/assignments' && hash.startsWith('/assignments')) ||
+                     (href === '/ai' && hash.startsWith('/ai'));
+    a.classList.toggle('active', href === hash || isDetail);
   });
 }
 
@@ -1118,12 +2122,46 @@ async function router() {
       case 'goal':
         await renderGoalDetail(route.params.id);
         break;
+      case 'create-redirect':
+        navigate('/ai/new');
+        break;
       case 'create':
-        renderCreate();
+        navigate('/ai/new');
         break;
       case 'achievements':
         state.achievements = await api.getAchievements();
         renderAchievements();
+        break;
+      case 'materials':
+        state.materials = await api.getMaterials();
+        renderMaterials();
+        break;
+      case 'material-detail':
+        await renderMaterialDetail(route.params.id);
+        break;
+      case 'tests':
+        state.tests = await api.getTests();
+        renderTests();
+        break;
+      case 'test-detail':
+        await renderTestDetail(route.params.id);
+        break;
+      case 'assignments':
+        state.assignments = await api.getAssignments();
+        renderAssignments();
+        break;
+      case 'ai-courses':
+        state.courses = await api.getCourses();
+        renderAICourses();
+        break;
+      case 'ai-new':
+        renderAINew();
+        break;
+      case 'ai-course':
+        await renderAICourseDetail(route.params.id);
+        break;
+      case 'ai-quest':
+        await renderAIQuestDetail(route.params.courseId, route.params.questId);
         break;
       default:
         navigate('/');
@@ -1136,16 +2174,22 @@ async function router() {
 
 async function refreshData() {
   try {
-    const [user, goals, daily, history] = await Promise.all([
+    const [user, goals, daily, history, materials, tests, assignments] = await Promise.all([
       api.getUser(),
       api.getGoals(),
       api.getDaily(),
       api.getHistory(),
+      api.getMaterials(),
+      api.getTests(),
+      api.getAssignments(),
     ]);
     state.user = user;
     state.goals = goals;
     state.daily = daily;
     state.history = history;
+    state.materials = materials;
+    state.tests = tests;
+    state.assignments = assignments;
   } catch (e) {
     console.error('Refresh failed:', e);
     // Don't overwrite existing state on refresh failure

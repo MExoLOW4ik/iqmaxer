@@ -28,6 +28,22 @@ except ImportError:
     async def generate_plan(_title: str, _desc: str, _timeframe: str) -> dict:
         return generate_fallback_plan(_title, _desc, _timeframe)
 
+# Try to import AI course generator
+try:
+    from ai_course import generate_course, check_answer, generate_hint
+    HAS_AI_COURSE = True
+except ImportError:
+    HAS_AI_COURSE = False
+
+    async def generate_course(_goal: str) -> dict:
+        return {"title": "Error", "description": "AI course module not available", "quests": []}
+
+    async def check_answer(_quest: dict, _answer: str) -> dict:
+        return {"is_correct": False, "feedback": "AI course module not available"}
+
+    async def generate_hint(_quest: dict) -> str:
+        return "AI course module not available"
+
 
 from gamification import (
     calculate_streak_bonus,
@@ -69,6 +85,27 @@ class CreateGoalRequest(BaseModel):
     description: str = ""
     timeframe: str = "month"
     target_date: str = ""
+
+
+class SubmitTestRequest(BaseModel):
+    answers: list[int]
+
+
+class CreateAssignmentRequest(BaseModel):
+    title: str
+    description: str = ""
+    subject: str = ""
+    difficulty_rank: str = "E"
+    xp_reward: int = 30
+    deadline: str = ""
+
+
+class GenerateCourseRequest(BaseModel):
+    goal: str
+
+
+class AnswerQuestRequest(BaseModel):
+    answer: str
 
 
 # ---------------------------------------------------------------------------
@@ -257,6 +294,283 @@ async def list_achievements():
 
 
 # ---------------------------------------------------------------------------
+# Materials
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/materials")
+async def list_materials():
+    return database.get_materials()
+
+
+@app.get("/api/materials/{material_id}")
+async def get_material(material_id: int):
+    material = database.get_material(material_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+    return material
+
+
+@app.post("/api/materials/{material_id}/study")
+async def study_material(material_id: int):
+    result = database.study_material(material_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/tests")
+async def list_tests():
+    return database.get_tests()
+
+
+@app.get("/api/tests/{test_id}")
+async def get_test(test_id: int):
+    test = database.get_test_with_questions(test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    return test
+
+
+@app.post("/api/tests/{test_id}/submit")
+async def submit_test(test_id: int, req: SubmitTestRequest):
+    result = database.submit_test(test_id, req.answers)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Assignments
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/assignments")
+async def list_assignments():
+    return database.get_assignments()
+
+
+@app.post("/api/assignments")
+async def create_assignment(req: CreateAssignmentRequest):
+    return database.create_assignment(
+        title=req.title,
+        description=req.description,
+        subject=req.subject,
+        difficulty_rank=req.difficulty_rank,
+        xp_reward=req.xp_reward,
+        deadline=req.deadline,
+    )
+
+
+@app.patch("/api/assignments/{assignment_id}/complete")
+async def complete_assignment(assignment_id: int):
+    result = database.complete_assignment(assignment_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+# ---------------------------------------------------------------------------
+# AI Course Generator
+# ---------------------------------------------------------------------------
+
+
+@app.post("/api/ai/courses/generate")
+async def api_generate_course(req: GenerateCourseRequest):
+    """Generate an AI-powered RPG course from a learning goal."""
+    if not req.goal.strip():
+        raise HTTPException(status_code=400, detail="Goal cannot be empty")
+
+    # Create initial course record
+    course = database.create_course(goal=req.goal, title="Generating...", description="")
+
+    try:
+        # Call AI to generate the course
+        result = await generate_course(req.goal)
+
+        if not result.get("quests") or len(result["quests"]) == 0:
+            # Fallback: provide a seed course with the user's goal
+            fallback_title = f"Solo Leveling: {req.goal[:50]}"
+            database.update_course_status(course["id"], "ready")
+
+            # Single connection for the entire fallback to avoid DB locking
+            conn = database._get_conn()
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE ai_courses SET title = ?, description = ? WHERE id = ?",
+                (fallback_title, f"AI course generation unavailable. Try again later or explore the seeded courses.", course["id"]),
+            )
+
+            # Copy quests from seeded course 1 as fallback (same connection)
+            seed_quests = conn.execute(
+                'SELECT * FROM ai_quests WHERE course_id = 1 ORDER BY "order" ASC'
+            ).fetchall()
+
+            if seed_quests:
+                total_xp = 0
+                for sq in seed_quests:
+                    cursor.execute("""
+                        INSERT INTO ai_quests (course_id, title, story, topic, difficulty_rank, xp_reward, correct_answer, hint, "order")
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        course["id"],
+                        sq["title"],
+                        sq["story"],
+                        sq["topic"],
+                        sq["difficulty_rank"],
+                        sq["xp_reward"],
+                        sq["correct_answer"],
+                        sq["hint"],
+                        sq["order"],
+                    ))
+                    total_xp += sq["xp_reward"]
+                cursor.execute("UPDATE ai_courses SET total_xp = ? WHERE id = ?", (total_xp, course["id"]))
+            conn.commit()
+            conn.close()
+            return database.get_course(course["id"])
+
+        # Update course with generated data
+        course_title = result.get("title", "Untitled Course")[:200]
+        course_desc = result.get("description", "")[:500]
+
+        # Single connection for the entire AI-generated course save
+        # (avoids DB locking from multiple connections)
+        conn = database._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE ai_courses SET title = ?, description = ?, status = ? WHERE id = ?",
+            (course_title, course_desc, "ready", course["id"]),
+        )
+
+        # Add quests and calculate total XP (inline, not via add_quest to stay on same conn)
+        total_xp = 0
+        for q_data in result["quests"]:
+            cursor.execute(
+                """INSERT INTO ai_quests
+                   (course_id, title, story, topic, difficulty_rank, xp_reward, correct_answer, hint, "order")
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    course["id"],
+                    q_data.get("title", ""),
+                    q_data.get("story", ""),
+                    q_data.get("topic", ""),
+                    q_data.get("difficulty_rank", "E"),
+                    q_data.get("xp_reward", 20),
+                    q_data.get("correct_answer", ""),
+                    q_data.get("hint", ""),
+                    q_data.get("order", 0),
+                ),
+            )
+            total_xp += q_data.get("xp_reward", 0)
+
+        # Update total XP
+        cursor.execute("UPDATE ai_courses SET total_xp = ? WHERE id = ?", (total_xp, course["id"]))
+        conn.commit()
+        conn.close()
+
+        # Return the full course
+        return database.get_course(course["id"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Close any open connection before updating status (avoids DB lock)
+        try:
+            conn.close()
+        except Exception:
+            pass
+        database.update_course_status(course["id"], "error", str(e))
+        raise HTTPException(status_code=500, detail=f"Course generation failed: {str(e)}")
+
+
+@app.get("/api/ai/courses")
+async def api_list_courses():
+    """List all AI-generated courses."""
+    return database.get_courses()
+
+
+@app.get("/api/ai/courses/{course_id}")
+async def api_get_course(course_id: int):
+    """Get a course with all its quests (correct_answer hidden unless completed)."""
+    course = database.get_course(course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return course
+
+
+@app.get("/api/ai/courses/{course_id}/stats")
+async def api_get_course_stats(course_id: int):
+    """Get course completion stats."""
+    course = database.get_course(course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    stats = database.get_course_stats(course_id)
+    return stats
+
+
+@app.post("/api/ai/quests/{quest_id}/answer")
+async def api_answer_quest(quest_id: int, req: AnswerQuestRequest):
+    """Submit an answer to a quest. Checks via AI, awards XP if correct."""
+    quest = database.get_quest(quest_id)
+    if not quest:
+        raise HTTPException(status_code=404, detail="Quest not found")
+
+    if quest["completed"]:
+        raise HTTPException(status_code=400, detail="Quest already completed")
+
+    # Check answer via AI
+    result = await check_answer(quest, req.answer)
+    is_correct = result.get("is_correct", False)
+    feedback = result.get("feedback", "")
+
+    # Record attempt and possibly mark completed
+    attempt_result = database.complete_quest(quest_id, req.answer, is_correct, feedback)
+    if "error" in attempt_result:
+        raise HTTPException(status_code=500, detail=attempt_result["error"])
+
+    xp_earned = attempt_result["xp_earned"]
+    level_up = False
+    fresh_user = None
+
+    # Award XP to user if correct
+    if xp_earned > 0:
+        xp_result = database.update_user_xp(xp_earned)
+        level_up = xp_result.get("level_up", False)
+        fresh_user = database.get_user()
+
+    return {
+        "correct": is_correct,
+        "feedback": feedback,
+        "xp_earned": xp_earned,
+        "level_up": level_up,
+        "user": fresh_user,
+    }
+
+
+@app.post("/api/ai/quests/{quest_id}/hint")
+async def api_get_quest_hint(quest_id: int):
+    """Generate an AI hint for a quest."""
+    quest = database.get_quest(quest_id)
+    if not quest:
+        raise HTTPException(status_code=404, detail="Quest not found")
+
+    hint = await generate_hint(quest)
+
+    # Save hint to quest for future use
+    conn = database._get_conn()
+    conn.execute("UPDATE ai_quests SET hint = ? WHERE id = ? AND (hint IS NULL OR hint = '')", (hint, quest_id))
+    conn.commit()
+    conn.close()
+
+    return {"hint": hint}
+
+
+# ---------------------------------------------------------------------------
 # Static frontend (must be last — catch-all)
 # ---------------------------------------------------------------------------
 
@@ -271,4 +585,4 @@ if os.path.isdir(FRONTEND_DIR):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8100, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8100)

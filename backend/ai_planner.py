@@ -16,13 +16,19 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "") or os.environ.get("OPENCODE_GO_API_KEY", "")
+OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "") or os.environ.get("OPENCODE_GO_BASE_URL", "https://opencode.ai/zen/go/v1")
 DEFAULT_TIMEOUT = 60  # seconds
 
-# Model preference order — try first, fallback to second
-PRIMARY_MODEL = "openai/gpt-4o"
-FALLBACK_MODEL = "anthropic/claude-sonnet-4"
+# Detect which provider we're using
+_USING_OPENROUTER = bool(os.environ.get("OPENROUTER_API_KEY"))
+
+if _USING_OPENROUTER:
+    PRIMARY_MODEL = "openai/gpt-4o"
+    FALLBACK_MODEL = "anthropic/claude-sonnet-4"
+else:
+    PRIMARY_MODEL = "glm-5.2"
+    FALLBACK_MODEL = "deepseek-v4-pro"
 
 # ── Rank definitions ──────────────────────────────────────────────────────────
 RANK_XP_DAILY = {"E": 10, "D": 25, "C": 50, "B": 100, "A": 250, "S": 500}
@@ -253,6 +259,9 @@ async def _call_openrouter(prompt: str, model: str) -> Optional[str]:
             response.raise_for_status()
             data = response.json()
             content = data["choices"][0]["message"]["content"]
+            # GLM-5.2 on OpenCode Go sometimes puts content in reasoning_content
+            if not content:
+                content = data["choices"][0]["message"].get("reasoning_content", "")
             logger.info(f"OpenRouter ({model}) returned {len(content)} chars")
             return content
     except httpx.TimeoutException:
