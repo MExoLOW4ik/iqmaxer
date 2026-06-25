@@ -51,9 +51,12 @@ def init_db() -> None:
     cursor = conn.cursor()
 
     cursor.executescript("""
-        CREATE TABLE IF NOT EXISTS user (
+        CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT DEFAULT 'Novice',
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            display_name TEXT,
+            avatar TEXT DEFAULT '🛰️',
             level INTEGER DEFAULT 1,
             xp INTEGER DEFAULT 0,
             rank TEXT DEFAULT 'E',
@@ -62,8 +65,15 @@ def init_db() -> None:
             created_at TEXT DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS goals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
             title TEXT NOT NULL,
             description TEXT,
             timeframe TEXT,
@@ -92,9 +102,11 @@ def init_db() -> None:
 
         CREATE TABLE IF NOT EXISTS achievements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            achievement_id TEXT UNIQUE,
+            user_id INTEGER REFERENCES users(id),
+            achievement_id TEXT,
             name TEXT,
-            unlocked_at TEXT DEFAULT (datetime('now'))
+            unlocked_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, achievement_id)
         );
 
         CREATE TABLE IF NOT EXISTS materials (
@@ -130,6 +142,7 @@ def init_db() -> None:
 
         CREATE TABLE IF NOT EXISTS test_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
             test_id INTEGER REFERENCES tests(id),
             score INTEGER DEFAULT 0,
             total INTEGER DEFAULT 0,
@@ -139,6 +152,7 @@ def init_db() -> None:
 
         CREATE TABLE IF NOT EXISTS assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
             title TEXT NOT NULL,
             description TEXT,
             subject TEXT,
@@ -151,6 +165,7 @@ def init_db() -> None:
 
         CREATE TABLE IF NOT EXISTS ai_courses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
             goal TEXT NOT NULL,
             title TEXT NOT NULL,
             description TEXT,
@@ -190,6 +205,7 @@ def init_db() -> None:
 
         CREATE TABLE IF NOT EXISTS tutor_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
             topic TEXT NOT NULL,
             title TEXT,                     -- short display title (defaults to topic)
             mastery INTEGER DEFAULT 0,      -- 0..100, per-topic progress
@@ -206,38 +222,89 @@ def init_db() -> None:
         );
     """)
 
-    # Seed default user if table is empty
-    existing = cursor.execute("SELECT id FROM user WHERE id = 1").fetchone()
-    if not existing:
-        cursor.execute(
-            "INSERT INTO user (id, name, level, xp, rank, streak) "
-            "VALUES (1, 'Novice', 1, 0, 'E', 0)"
-        )
-
     conn.commit()
     conn.close()
 
-    # Seed AI courses if empty
-    seed_ai_courses()
-
 
 # ---------------------------------------------------------------------------
-# User
+# Auth: users & sessions
 # ---------------------------------------------------------------------------
 
-def get_user() -> dict:
+def _public_user(row: Optional[sqlite3.Row]) -> Optional[dict]:
+    """Convert a user row to a dict with the password hash stripped."""
+    if row is None:
+        return None
+    u = dict(row)
+    u.pop("password_hash", None)
+    return u
+
+
+def create_user(username: str, password_hash: str, display_name: str = "", avatar: str = "🛰️") -> dict:
+    """Create a user. Returns the public user dict (no password hash)."""
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM user WHERE id = 1").fetchone()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO users (username, password_hash, display_name, avatar) VALUES (?, ?, ?, ?)",
+        (username, password_hash, display_name or username, avatar or "🛰️"),
+    )
+    user_id = cursor.lastrowid
+    conn.commit()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return _public_user(row)
+
+
+def get_user_by_username(username: str) -> Optional[dict]:
+    """Return the FULL user row (including password_hash) for auth checks."""
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
     conn.close()
     return _row_to_dict(row)
 
 
-def update_streak() -> None:
-    """Update streak based on last_active_date vs today."""
+def create_session(token: str, user_id: int) -> None:
+    conn = _get_conn()
+    conn.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user_id))
+    conn.commit()
+    conn.close()
+
+
+def get_user_by_token(token: str) -> Optional[dict]:
+    """Resolve a session token to its public user dict, or None."""
+    conn = _get_conn()
+    row = conn.execute(
+        """SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
+           WHERE s.token = ?""",
+        (token,),
+    ).fetchone()
+    conn.close()
+    return _public_user(row)
+
+
+def delete_session(token: str) -> None:
+    conn = _get_conn()
+    conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+    conn.commit()
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# User progress (per-user)
+# ---------------------------------------------------------------------------
+
+def get_user(user_id: int) -> Optional[dict]:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return _public_user(row)
+
+
+def update_streak(user_id: int) -> None:
+    """Update a user's streak based on last_active_date vs today."""
     conn = _get_conn()
     cursor = conn.cursor()
 
-    user = cursor.execute("SELECT * FROM user WHERE id = 1").fetchone()
+    user = cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     if not user:
         conn.close()
         return
@@ -250,38 +317,27 @@ def update_streak() -> None:
     elif last_active:
         last_date = datetime.strptime(last_active, "%Y-%m-%d").date()
         yesterday = date.today() - timedelta(days=1)
-
-        if last_date == yesterday:
-            cursor.execute(
-                "UPDATE user SET streak = streak + 1, last_active_date = ? WHERE id = 1",
-                (today,),
-            )
-        else:
-            cursor.execute(
-                "UPDATE user SET streak = 1, last_active_date = ? WHERE id = 1",
-                (today,),
-            )
+        new_streak = "streak + 1" if last_date == yesterday else "1"
+        cursor.execute(
+            f"UPDATE users SET streak = {new_streak}, last_active_date = ? WHERE id = ?",
+            (today, user_id),
+        )
     else:
         cursor.execute(
-            "UPDATE user SET streak = 1, last_active_date = ? WHERE id = 1",
-            (today,),
+            "UPDATE users SET streak = 1, last_active_date = ? WHERE id = ?",
+            (today, user_id),
         )
 
     conn.commit()
     conn.close()
 
 
-def update_user_xp(added_xp: int) -> dict:
-    """Add XP, recalculate level/rank, and return summary.
-
-    Returns::
-
-        {level, xp, rank, level_up, benefits}
-    """
+def update_user_xp(user_id: int, added_xp: int) -> dict:
+    """Add XP to a user, recalculate level/rank, and return a summary."""
     conn = _get_conn()
     cursor = conn.cursor()
 
-    user = cursor.execute("SELECT * FROM user WHERE id = 1").fetchone()
+    user = cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     old_level = user["level"]
     new_xp = user["xp"] + added_xp
 
@@ -290,8 +346,8 @@ def update_user_xp(added_xp: int) -> dict:
     level_up = new_level > old_level
 
     cursor.execute(
-        "UPDATE user SET xp = ?, level = ?, rank = ? WHERE id = 1",
-        (new_xp, new_level, new_rank),
+        "UPDATE users SET xp = ?, level = ?, rank = ? WHERE id = ?",
+        (new_xp, new_level, new_rank, user_id),
     )
     conn.commit()
     conn.close()
@@ -309,21 +365,26 @@ def update_user_xp(added_xp: int) -> dict:
 # Goals
 # ---------------------------------------------------------------------------
 
-def get_goals() -> list[dict]:
+def get_goals(user_id: int) -> list[dict]:
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM goals ORDER BY created_at DESC").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC", (user_id,)
+    ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
 
 
-def get_goal(goal_id: int) -> Optional[dict]:
+def get_goal(goal_id: int, user_id: int) -> Optional[dict]:
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM goals WHERE id = ?", (goal_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM goals WHERE id = ? AND user_id = ?", (goal_id, user_id)
+    ).fetchone()
     conn.close()
     return _row_to_dict(row)
 
 
 def create_goal(
+    user_id: int,
     title: str,
     description: str,
     timeframe: str,
@@ -335,8 +396,8 @@ def create_goal(
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO goals (title, description, timeframe, target_date) VALUES (?, ?, ?, ?)",
-        (title, description, timeframe, target_date),
+        "INSERT INTO goals (user_id, title, description, timeframe, target_date) VALUES (?, ?, ?, ?, ?)",
+        (user_id, title, description, timeframe, target_date),
     )
     goal_id = cursor.lastrowid
 
@@ -380,15 +441,16 @@ def get_quests(goal_id: int) -> list[dict]:
     return _rows_to_dicts(rows)
 
 
-def get_daily_quests() -> list[dict]:
-    """Today's incomplete daily quests."""
+def get_daily_quests(user_id: int) -> list[dict]:
+    """Today's incomplete daily quests for a user."""
     conn = _get_conn()
     rows = conn.execute(
         """SELECT q.*, g.title AS goal_title
            FROM quests q
-           LEFT JOIN goals g ON q.goal_id = g.id
-           WHERE q.quest_type = 'daily' AND q.completed = 0
+           JOIN goals g ON q.goal_id = g.id
+           WHERE g.user_id = ? AND q.quest_type = 'daily' AND q.completed = 0
            ORDER BY q."order" ASC""",
+        (user_id,),
     ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
@@ -407,15 +469,19 @@ def get_all_quests() -> list[dict]:
     return _rows_to_dicts(rows)
 
 
-def complete_quest(quest_id: int) -> dict:
-    """Mark a quest completed and return quest data + base xp_reward.
+def complete_quest(quest_id: int, user_id: int) -> dict:
+    """Mark a user's quest completed and return quest data + base xp_reward.
 
     Returns ``{"quest": …, "xp_reward": …}`` or ``{"error": …}``.
     """
     conn = _get_conn()
     cursor = conn.cursor()
 
-    quest = cursor.execute("SELECT * FROM quests WHERE id = ?", (quest_id,)).fetchone()
+    quest = cursor.execute(
+        """SELECT q.* FROM quests q JOIN goals g ON q.goal_id = g.id
+           WHERE q.id = ? AND g.user_id = ?""",
+        (quest_id, user_id),
+    ).fetchone()
     if not quest:
         conn.close()
         return {"error": "Quest not found"}
@@ -457,20 +523,22 @@ def reset_daily_quests() -> None:
 # Achievements
 # ---------------------------------------------------------------------------
 
-def get_achievements() -> list[dict]:
+def get_achievements(user_id: int) -> list[dict]:
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM achievements ORDER BY unlocked_at ASC").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM achievements WHERE user_id = ? ORDER BY unlocked_at ASC", (user_id,)
+    ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
 
 
-def add_achievement(achievement_id: str, name: str) -> bool:
-    """Insert a new achievement record. Returns False if already unlocked."""
+def add_achievement(user_id: int, achievement_id: str, name: str) -> bool:
+    """Insert a new achievement record for a user. False if already unlocked."""
     conn = _get_conn()
     try:
         conn.execute(
-            "INSERT INTO achievements (achievement_id, name) VALUES (?, ?)",
-            (achievement_id, name),
+            "INSERT INTO achievements (user_id, achievement_id, name) VALUES (?, ?, ?)",
+            (user_id, achievement_id, name),
         )
         conn.commit()
         conn.close()
@@ -484,16 +552,17 @@ def add_achievement(achievement_id: str, name: str) -> bool:
 # History
 # ---------------------------------------------------------------------------
 
-def get_history() -> list[dict]:
-    """Return the 50 most recently completed quests."""
+def get_history(user_id: int) -> list[dict]:
+    """Return the user's 50 most recently completed quests."""
     conn = _get_conn()
     rows = conn.execute(
         """SELECT q.*, g.title AS goal_title
            FROM quests q
-           LEFT JOIN goals g ON q.goal_id = g.id
-           WHERE q.completed = 1
+           JOIN goals g ON q.goal_id = g.id
+           WHERE g.user_id = ? AND q.completed = 1
            ORDER BY q.created_at DESC
            LIMIT 50""",
+        (user_id,),
     ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
@@ -536,8 +605,8 @@ def get_material(material_id: int) -> Optional[dict]:
     return _row_to_dict(row)
 
 
-def study_material(material_id: int) -> dict:
-    """Mark material as studied and award XP (once only)."""
+def study_material(material_id: int, user_id: int) -> dict:
+    """Mark material as studied and award XP to the user (once only)."""
     conn = _get_conn()
     cursor = conn.cursor()
 
@@ -562,7 +631,7 @@ def study_material(material_id: int) -> dict:
 
     # Award XP (separate connection)
     xp_reward = material["xp_reward"]
-    xp_result = update_user_xp(xp_reward)
+    xp_result = update_user_xp(user_id, xp_reward)
 
     return {
         "material": material_dict,
@@ -612,8 +681,8 @@ def get_test_with_questions(test_id: int) -> Optional[dict]:
     return test_dict
 
 
-def submit_test(test_id: int, answers: list[int]) -> dict:
-    """Score answers, record result, award XP if passed."""
+def submit_test(test_id: int, answers: list[int], user_id: int) -> dict:
+    """Score answers, record result for the user, award XP if passed."""
     conn = _get_conn()
     cursor = conn.cursor()
 
@@ -645,8 +714,8 @@ def submit_test(test_id: int, answers: list[int]) -> dict:
     passed = 1 if pct >= pass_percent else 0
 
     cursor.execute(
-        "INSERT INTO test_results (test_id, score, total, passed) VALUES (?, ?, ?, ?)",
-        (test_id, score, total, passed),
+        "INSERT INTO test_results (user_id, test_id, score, total, passed) VALUES (?, ?, ?, ?, ?)",
+        (user_id, test_id, score, total, passed),
     )
     result_id = cursor.lastrowid
 
@@ -658,7 +727,7 @@ def submit_test(test_id: int, answers: list[int]) -> dict:
     xp_earned = 0
     if passed:
         xp_earned = test["xp_reward"]
-        xp_result = update_user_xp(xp_earned)
+        xp_result = update_user_xp(user_id, xp_earned)
 
     return {
         "result_id": result_id,
@@ -675,14 +744,17 @@ def submit_test(test_id: int, answers: list[int]) -> dict:
 # Assignments
 # ---------------------------------------------------------------------------
 
-def get_assignments() -> list[dict]:
+def get_assignments(user_id: int) -> list[dict]:
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM assignments ORDER BY created_at DESC").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM assignments WHERE user_id = ? ORDER BY created_at DESC", (user_id,)
+    ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
 
 
 def create_assignment(
+    user_id: int,
     title: str,
     description: str = "",
     subject: str = "",
@@ -693,9 +765,9 @@ def create_assignment(
     conn = _get_conn()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO assignments (title, description, subject, difficulty_rank, xp_reward, deadline) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (title, description, subject, difficulty_rank, xp_reward, deadline or None),
+        "INSERT INTO assignments (user_id, title, description, subject, difficulty_rank, xp_reward, deadline) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (user_id, title, description, subject, difficulty_rank, xp_reward, deadline or None),
     )
     assignment_id = cursor.lastrowid
     conn.commit()
@@ -706,13 +778,13 @@ def create_assignment(
     return assignment
 
 
-def complete_assignment(assignment_id: int) -> dict:
-    """Mark assignment completed and award XP (once only)."""
+def complete_assignment(assignment_id: int, user_id: int) -> dict:
+    """Mark a user's assignment completed and award XP (once only)."""
     conn = _get_conn()
     cursor = conn.cursor()
 
     assignment = cursor.execute(
-        "SELECT * FROM assignments WHERE id = ?", (assignment_id,)
+        "SELECT * FROM assignments WHERE id = ? AND user_id = ?", (assignment_id, user_id)
     ).fetchone()
     if not assignment:
         conn.close()
@@ -736,7 +808,7 @@ def complete_assignment(assignment_id: int) -> dict:
 
     # Award XP (separate connection)
     xp_reward = assignment["xp_reward"]
-    xp_result = update_user_xp(xp_reward)
+    xp_result = update_user_xp(user_id, xp_reward)
 
     return {
         "assignment": assignment_dict,
@@ -750,13 +822,13 @@ def complete_assignment(assignment_id: int) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def create_course(goal: str, title: str, description: str = "", difficulty: str = "E") -> dict:
-    """Create a new AI-generated course. Returns the course dict."""
+def create_course(user_id: int, goal: str, title: str, description: str = "", difficulty: str = "E") -> dict:
+    """Create a new AI-generated course for a user. Returns the course dict."""
     conn = _get_conn()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO ai_courses (goal, title, description, difficulty, status) VALUES (?, ?, ?, ?, 'generating')",
-        (goal, title, description, difficulty),
+        "INSERT INTO ai_courses (user_id, goal, title, description, difficulty, status) VALUES (?, ?, ?, ?, ?, 'generating')",
+        (user_id, goal, title, description, difficulty),
     )
     course_id = cursor.lastrowid
     conn.commit()
@@ -767,24 +839,28 @@ def create_course(goal: str, title: str, description: str = "", difficulty: str 
     return course
 
 
-def get_courses() -> list[dict]:
-    """List all AI courses with stats."""
+def get_courses(user_id: int) -> list[dict]:
+    """List a user's AI courses with stats."""
     conn = _get_conn()
     rows = conn.execute(
         """SELECT c.*,
             (SELECT COUNT(*) FROM ai_quests WHERE course_id = c.id) as total_quests,
             (SELECT COUNT(*) FROM ai_quests WHERE course_id = c.id AND completed = 1) as completed_quests
            FROM ai_courses c
-           ORDER BY c.created_at DESC"""
+           WHERE c.user_id = ?
+           ORDER BY c.created_at DESC""",
+        (user_id,),
     ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
 
 
-def get_course(course_id: int) -> Optional[dict]:
-    """Get a course with all its quests (hides correct_answer for non-completed quests)."""
+def get_course(course_id: int, user_id: int) -> Optional[dict]:
+    """Get a user's course with all its quests (hides correct_answer for non-completed quests)."""
     conn = _get_conn()
-    course = conn.execute("SELECT * FROM ai_courses WHERE id = ?", (course_id,)).fetchone()
+    course = conn.execute(
+        "SELECT * FROM ai_courses WHERE id = ? AND user_id = ?", (course_id, user_id)
+    ).fetchone()
     if not course:
         conn.close()
         return None
@@ -844,20 +920,28 @@ def add_quest(course_id: int, quest_data: dict) -> dict:
     return quest
 
 
-def get_quest(quest_id: int) -> Optional[dict]:
-    """Get a single quest by ID."""
+def get_quest(quest_id: int, user_id: int) -> Optional[dict]:
+    """Get a single AI quest by ID, scoped to the owning user's course."""
     conn = _get_conn()
-    quest = conn.execute("SELECT * FROM ai_quests WHERE id = ?", (quest_id,)).fetchone()
+    quest = conn.execute(
+        """SELECT q.* FROM ai_quests q JOIN ai_courses c ON q.course_id = c.id
+           WHERE q.id = ? AND c.user_id = ?""",
+        (quest_id, user_id),
+    ).fetchone()
     conn.close()
     return _row_to_dict(quest)
 
 
-def complete_quest(quest_id: int, user_answer: str, is_correct: bool, feedback: str) -> dict:
+def complete_quest(quest_id: int, user_answer: str, is_correct: bool, feedback: str, user_id: int) -> dict:
     """Record an attempt and optionally mark quest completed. Returns result dict."""
     conn = _get_conn()
     cursor = conn.cursor()
 
-    quest = cursor.execute("SELECT * FROM ai_quests WHERE id = ?", (quest_id,)).fetchone()
+    quest = cursor.execute(
+        """SELECT q.* FROM ai_quests q JOIN ai_courses c ON q.course_id = c.id
+           WHERE q.id = ? AND c.user_id = ?""",
+        (quest_id, user_id),
+    ).fetchone()
     if not quest:
         conn.close()
         return {"error": "Quest not found"}
@@ -934,187 +1018,27 @@ def get_course_stats(course_id: int) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Seed AI Courses
-# ---------------------------------------------------------------------------
-
-
-def seed_ai_courses() -> None:
-    """Seed 1-2 example courses with hardcoded quests for testing without API key."""
-    conn = _get_conn()
-    cursor = conn.cursor()
-
-    # Check if already seeded
-    existing = cursor.execute("SELECT COUNT(*) as cnt FROM ai_courses").fetchone()
-    if existing and existing["cnt"] > 0:
-        conn.close()
-        return
-
-    # Example Course 1: Physics of Extreme Environments
-    cursor.execute(
-        "INSERT INTO ai_courses (goal, title, description, difficulty, status, total_xp, earned_xp) "
-        "VALUES (?, ?, ?, ?, 'ready', ?, 0)",
-        (
-            "Learn physics through extreme environment problems",
-            "Physics of Extreme Environments",
-            "Master physics by solving practical problems on Mars, deep ocean, and other extreme locations. "
-            "A friendly adventure course where you're an explorer navigating hostile environments.",
-            "E", 240,
-        ),
-    )
-    course1_id = cursor.lastrowid
-
-    quests1 = [
-        {
-            "title": "The Mars Oil Barrel Launch",
-            "story": "You are an explorer on Mars. A supply drop of a 100kg oil barrel must be launched from Point A (altitude 0m) to Point B (altitude 50m) which is 200m away horizontally. Mars gravity is 3.72 m/s². There is a headwind of 10 m/s opposing the launch. Assuming no air resistance on the barrel itself (only wind affects horizontal velocity), calculate the minimum initial velocity (in m/s) required to reach Point B. Round to 1 decimal place.",
-            "topic": "Projectile Motion with Modified Gravity",
-            "difficulty_rank": "D",
-            "xp_reward": 30,
-            "correct_answer": "32.5",
-            "hint": "Use the projectile range equation: R = v²sin(2θ)/g. Since launch angle isn't specified, assume the optimal 45° for minimum velocity. Account for wind reducing horizontal component.",
-        },
-        {
-            "title": "Deep Ocean Pressure Vessel",
-            "story": "You descend to the Mariana Trench (11,000m deep) in a submersible. The viewport is a circular window of radius 0.3m. Seawater density is 1025 kg/m³. Calculate the total force (in Newtons) exerted by water on the viewport at that depth. Use g = 9.81 m/s². Round to the nearest whole number.",
-            "topic": "Hydrostatic Pressure and Force",
-            "difficulty_rank": "D",
-            "xp_reward": 30,
-            "correct_answer": "31286976",
-            "hint": "Pressure at depth: P = ρgh. Force on a surface: F = P × A. The viewport is a circle: A = πr².",
-        },
-        {
-            "title": "Venus Sulfuric Acid Cloud Navigator",
-            "story": "Your explorer ship flies through Venus's upper atmosphere at 100 km altitude where temperature is -10°C and pressure is 10,000 Pa. The atmosphere is 96.5% CO₂ (molar mass 44 g/mol) and 3.5% N₂ (28 g/mol). Calculate the density of the atmosphere (in kg/m³) at this altitude. Use R = 8.314 J/(mol·K). Round to 3 decimal places.",
-            "topic": "Ideal Gas Law with Mixed Gases",
-            "difficulty_rank": "C",
-            "xp_reward": 50,
-            "correct_answer": "0.188",
-            "hint": "Use the ideal gas law: PV = nRT. But you need density ρ = m/V = (n×M_avg)/V. First find the average molar mass of the mixture. Then use ρ = (P × M_avg) / (R × T). Remember to convert °C to Kelvin.",
-        },
-        {
-            "title": "Asteroid Mining: Kinetic Energy",
-            "story": "You're an explorer mining an asteroid of mass 5×10^12 kg approaching Earth at 15 km/s relative velocity. Your ship must deflect it by applying a force of 10^6 N. If the force is applied continuously for 30 days, will this be enough to stop it? Calculate the asteroid's kinetic energy in Joules (scientific notation) and determine if the force applied over the given time provides enough work to stop it.",
-            "topic": "Kinetic Energy and Work-Energy Theorem",
-            "difficulty_rank": "C",
-            "xp_reward": 50,
-            "correct_answer": "5.625e20",
-            "hint": "Kinetic energy = ½mv². Work = Force × distance. To find distance, use constant acceleration: v_f² = v_i² + 2ad, where a = F/m. Or just check if impulse (F×t) equals momentum change needed.",
-        },
-        {
-            "title": "Space Station Orbit Calculation",
-            "story": "The International Space Station orbits at 408 km above Earth's surface. Earth's radius is 6371 km, mass is 5.97×10^24 kg. Calculate the orbital velocity in km/s. Use G = 6.67×10^-11 N·m²/kg². Round to 2 decimal places.",
-            "topic": "Orbital Mechanics",
-            "difficulty_rank": "B",
-            "xp_reward": 80,
-            "correct_answer": "7.66",
-            "hint": "For a circular orbit, centripetal force = gravitational force: mv²/r = GMm/r². Solve for v: v = √(GM/r). Remember r = Earth radius + orbital altitude. Convert to km for answer.",
-        },
-    ]
-
-    for i, q in enumerate(quests1):
-        cursor.execute(
-            """INSERT INTO ai_quests
-               (course_id, title, story, topic, difficulty_rank, xp_reward, correct_answer, hint, "order")
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (course1_id, q["title"], q["story"], q["topic"], q["difficulty_rank"],
-             q["xp_reward"], q["correct_answer"], q["hint"], i),
-        )
-
-    # Example Course 2: Chemistry of Magical Elements
-    cursor.execute(
-        "INSERT INTO ai_courses (goal, title, description, difficulty, status, total_xp, earned_xp) "
-        "VALUES (?, ?, ?, ?, 'ready', ?, 0)",
-        (
-            "Master chemistry through magical world scenarios",
-            "Chemistry of Magical Elements",
-            "Learn chemistry concepts through magical world problems. As an explorer-alchemist, you mix potions, transmute elements, and balance magical reactions.",
-            "E", 180,
-        ),
-    )
-    course2_id = cursor.lastrowid
-
-    quests2 = [
-        {
-            "title": "Potion Concentration",
-            "story": "You need to brew a healing potion that is 12% (by volume) unicorn essence. You have 500 mL of a 5% essence solution and pure (100%) essence. How many mL of pure essence must you add to reach the target 12% concentration? Round to 1 decimal place.",
-            "topic": "Solution Concentration (Mixture Problems)",
-            "difficulty_rank": "E",
-            "xp_reward": 20,
-            "correct_answer": "39.8",
-            "hint": "Let x be the mL of pure essence added. Total volume = 500 + x. Amount of essence = 0.05×500 + 1.0×x. Set this equal to 0.12×(500 + x) and solve for x.",
-        },
-        {
-            "title": "Mana Crystal Stoichiometry",
-            "story": "Mana crystal (MgSO₄·7H₂O) is used to power enchantments. Calculate the percentage (by mass) of water in the hydrated crystal. Atomic masses: Mg=24.3, S=32.1, O=16.0, H=1.0. Round to 1 decimal place.",
-            "topic": "Stoichiometry, Percent Composition",
-            "difficulty_rank": "E",
-            "xp_reward": 20,
-            "correct_answer": "51.1",
-            "hint": "Calculate formula mass of MgSO₄·7H₂O. The water part is 7 × (2×1.0 + 16.0). Then (mass of water / total formula mass) × 100%.",
-        },
-        {
-            "title": "Fire Potion Exothermic Reaction",
-            "story": "A fire potion uses the reaction: 2Al + Fe₂O₃ → 2Fe + Al₂O₃ (thermite reaction). Given bond energies: Al-O=512 kJ/mol, Fe-O=390 kJ/mol, Al—Al=200 kJ/mol, Fe—Fe=150 kJ/mol, O=O=498 kJ/mol. Calculate the approximate enthalpy change (ΔH) in kJ for this reaction (not per mole). Round to the nearest whole number.",
-            "topic": "Thermochemistry, Bond Enthalpies",
-            "difficulty_rank": "D",
-            "xp_reward": 30,
-            "correct_answer": "-852",
-            "hint": "ΔH = energy of bonds broken - energy of bonds formed. Break: 2×(Al-Al) + 2×(Fe-O)... Actually for thermite: break bonds in reactants = 2×(?) + 3×(?). Form bonds in products = 2×(?) + 3×(?).",
-        },
-        {
-            "title": "Mana Elixir pH Balance",
-            "story": "A mana elixir has [H⁺] = 3.16×10⁻⁶ M. What is its pH? If the elixir must be between pH 5.0 and 5.5 for safe consumption, is it safe? Provide the pH value rounded to 2 decimal places, followed by 'yes' or 'no' (e.g. '5.50,yes').",
-            "topic": "pH Calculations",
-            "difficulty_rank": "C",
-            "xp_reward": 50,
-            "correct_answer": "5.50,yes",
-            "hint": "pH = -log₁₀[H⁺]. Use log₁₀(3.16×10⁻⁶) = log₁₀(3.16) + log₁₀(10⁻⁶).",
-        },
-        {
-            "title": "Philosopher's Stone: Half-Life",
-            "story": "A Philosopher's Stone contains a magical isotope with half-life of 12.5 years. You find a stone with 25% of its original magical potency remaining. How old is the stone in years? Round to 1 decimal place.",
-            "topic": "Radioactive Decay, Half-Life",
-            "difficulty_rank": "B",
-            "xp_reward": 60,
-            "correct_answer": "25.0",
-            "hint": "After n half-lives, remaining fraction = (½)^n. Set (½)^n = 0.25 and solve for n. Then multiply by the half-life.",
-        },
-    ]
-
-    for i, q in enumerate(quests2):
-        cursor.execute(
-            """INSERT INTO ai_quests
-               (course_id, title, story, topic, difficulty_rank, xp_reward, correct_answer, hint, "order")
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (course2_id, q["title"], q["story"], q["topic"], q["difficulty_rank"],
-             q["xp_reward"], q["correct_answer"], q["hint"], i),
-        )
-
-    conn.commit()
-    conn.close()
-
-
-# ---------------------------------------------------------------------------
 # Tutor sessions (conversational learning)
 # ---------------------------------------------------------------------------
 
-def get_tutor_sessions() -> list[dict]:
-    """List all tutor sessions, most recently updated first (for the sidebar)."""
+def get_tutor_sessions(user_id: int) -> list[dict]:
+    """List a user's tutor sessions, most recently updated first."""
     conn = _get_conn()
     rows = conn.execute(
-        "SELECT * FROM tutor_sessions ORDER BY updated_at DESC"
+        "SELECT * FROM tutor_sessions WHERE user_id = ? ORDER BY updated_at DESC",
+        (user_id,),
     ).fetchall()
     conn.close()
     return _rows_to_dicts(rows)
 
 
-def create_tutor_session(topic: str, title: str = "") -> dict:
+def create_tutor_session(user_id: int, topic: str, title: str = "") -> dict:
     """Create a new tutor session for a topic. Returns the session row."""
     conn = _get_conn()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO tutor_sessions (topic, title) VALUES (?, ?)",
-        (topic, title or topic),
+        "INSERT INTO tutor_sessions (user_id, topic, title) VALUES (?, ?, ?)",
+        (user_id, topic, title or topic),
     )
     session_id = cursor.lastrowid
     conn.commit()
@@ -1125,11 +1049,11 @@ def create_tutor_session(topic: str, title: str = "") -> dict:
     return _row_to_dict(row)
 
 
-def get_tutor_session(session_id: int) -> Optional[dict]:
-    """Get a session plus its full message history (ordered oldest first)."""
+def get_tutor_session(session_id: int, user_id: int) -> Optional[dict]:
+    """Get a user's session plus its full message history (ordered oldest first)."""
     conn = _get_conn()
     row = conn.execute(
-        "SELECT * FROM tutor_sessions WHERE id = ?", (session_id,)
+        "SELECT * FROM tutor_sessions WHERE id = ? AND user_id = ?", (session_id, user_id)
     ).fetchone()
     if not row:
         conn.close()
@@ -1192,12 +1116,12 @@ def bump_tutor_mastery(session_id: int, amount: int) -> int:
     return row["mastery"] if row else 0
 
 
-def delete_tutor_session(session_id: int) -> bool:
-    """Delete a session and all its messages. Returns True if it existed."""
+def delete_tutor_session(session_id: int, user_id: int) -> bool:
+    """Delete a user's session and all its messages. True if it existed."""
     conn = _get_conn()
     cursor = conn.cursor()
     existed = cursor.execute(
-        "SELECT id FROM tutor_sessions WHERE id = ?", (session_id,)
+        "SELECT id FROM tutor_sessions WHERE id = ? AND user_id = ?", (session_id, user_id)
     ).fetchone() is not None
     cursor.execute("DELETE FROM tutor_messages WHERE session_id = ?", (session_id,))
     cursor.execute("DELETE FROM tutor_sessions WHERE id = ?", (session_id,))
