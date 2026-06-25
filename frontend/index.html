@@ -703,13 +703,80 @@ a:hover{color:#a5acff}
 .tutor-suggest{padding:8px 14px;border-radius:99px;background:rgba(124,131,255,0.10);border:1px solid rgba(124,131,255,0.22);color:#cfd1e6;cursor:pointer;font-size:.82rem;transition:all .2s}
 .tutor-suggest:hover{background:rgba(124,131,255,0.2)}
 @media(max-width:720px){.tutor-sidebar{display:none}.tutor-layout{height:calc(100vh - 64px - 70px)}}
+
+/* ========== COSMIC / WELCOME ========== */
+body.welcome-active{
+  background:radial-gradient(1400px 800px at 50% -20%, #1a1140, #0a0618 60%, #06040f);
+  overflow:hidden;
+}
+#starfield{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+.float-eqs{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.float-eq{
+  position:absolute;top:110%;color:rgba(160,150,255,0.16);font-size:1.1rem;
+  font-family:'Cambria Math','Times New Roman',serif;white-space:nowrap;
+  animation-name:floatUp;animation-timing-function:linear;animation-iteration-count:infinite;
+}
+@keyframes floatUp{from{transform:translateY(0)}to{transform:translateY(-130vh)}}
+.glass-cosmic{
+  background:rgba(26,20,54,0.55);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(150,130,255,0.22);
+  border-radius:24px;
+  box-shadow:0 20px 80px rgba(80,40,180,0.35),inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.welcome-panel{
+  position:relative;z-index:2;width:min(420px,92vw);
+  margin:0 auto;top:50%;transform:translateY(-50%);
+  padding:34px 30px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.brand-orb,.tutor-orb{
+  width:64px;height:64px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#c7b8ff,#7c5cff 40%,#3a1d8a 75%,#1a0d44);
+  box-shadow:0 0 30px rgba(124,92,255,0.7),0 0 60px rgba(124,92,255,0.35);
+  animation:orbPulse 3s ease-in-out infinite;
+}
+@keyframes orbPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.25)}}
+.brand-title{font-size:2.1rem;font-weight:800;letter-spacing:.5px;
+  background:linear-gradient(135deg,#d9ccff,#8b7bff);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0}
+.brand-tag{color:#b6a8e0;font-size:.9rem;max-width:340px;line-height:1.5}
+.auth-toggle{display:flex;gap:6px;background:rgba(10,6,28,0.6);border-radius:99px;padding:4px;width:100%;max-width:280px}
+.auth-toggle button{flex:1;padding:9px;border:none;border-radius:99px;background:transparent;color:#9a8fc4;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.auth-toggle button.on{background:linear-gradient(135deg,#6d4bff,#9a6bff);color:#fff}
+#authForm{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px}
+.auth-input{
+  width:100%;padding:12px 14px;border-radius:12px;
+  background:rgba(10,6,28,0.7);border:1px solid rgba(150,130,255,0.22);
+  color:#e8e9f3;font-family:inherit;font-size:.92rem;
+}
+.auth-input:focus{outline:none;border-color:rgba(150,130,255,0.6);box-shadow:0 0 0 3px rgba(124,92,255,0.15)}
+.avatar-picker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.avatar-opt{width:38px;height:38px;border-radius:10px;font-size:1.1rem;cursor:pointer;
+  background:rgba(10,6,28,0.6);border:1px solid rgba(150,130,255,0.2);transition:all .15s}
+.avatar-opt.sel{border-color:#9a6bff;background:rgba(124,92,255,0.25);transform:scale(1.05)}
+.auth-err{color:#ff8a9b;font-size:.8rem;min-height:1em}
+.auth-submit{justify-content:center;margin-top:4px}
+
+/* Tutor thinking orb (replaces dots) */
+.tutor-thinking{align-self:flex-start;display:flex;align-items:center;gap:10px;color:#a99ed8;font-size:.85rem;padding:4px 2px}
+.tutor-thinking .tutor-orb{width:26px;height:26px;animation:orbPulse 1.6s ease-in-out infinite}
+.msg.assistant{position:relative}
+.adv-toggle{display:flex;align-items:center;gap:7px;font-size:.74rem;color:#a99ed8;cursor:pointer;user-select:none}
+.adv-toggle input{appearance:none;width:34px;height:18px;border-radius:99px;background:rgba(124,131,255,0.2);position:relative;cursor:pointer;transition:all .2s;flex-shrink:0}
+.adv-toggle input:checked{background:linear-gradient(135deg,#6d4bff,#9a6bff)}
+.adv-toggle input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:all .2s}
+.adv-toggle input:checked::after{left:18px}
+.hud-logout{background:none;border:none;color:#8e91ac;cursor:pointer;font-size:1.1rem;padding:6px;border-radius:8px}
+.hud-logout:hover{color:#ff8a9b}
+.hud-avatar{font-size:1.2rem}
 </style>
 </head>
 <body>
 
 <!-- ===== HUD ===== -->
-<header class="hud" id="hud">
+<header class="hud" id="hud" style="display:none">
   <div class="hud-left">
+    <span class="hud-avatar" id="hudAvatar">🛰️</span>
     <span class="hud-level" id="hudLevel">Lv.1</span>
     <span class="rank-badge rank-E sm" id="hudRank">E</span>
     <div>
@@ -720,6 +787,7 @@ a:hover{color:#a5acff}
     <span class="hud-streak" id="hudStreak">🔥 <span id="hudStreakCount">0</span></span>
     <button class="nav-icon" onclick="navigate('/')" title="Tutor">💬</button>
     <button class="nav-icon" onclick="navigate('/dashboard')" title="Dashboard">🏠</button>
+    <button class="hud-logout" onclick="logout()" title="Log out">⏻</button>
   </div>
 </header>
 
@@ -736,7 +804,7 @@ a:hover{color:#a5acff}
 </div>
 
 <!-- ===== BOTTOM NAV ===== -->
-<nav class="bottom-nav">
+<nav class="bottom-nav" style="display:none">
   <a href="#/" data-nav="tutor">
     <span class="nav-icon">💬</span>Tutor
   </a>
@@ -782,6 +850,7 @@ let state = {
   tutorSessions: [],
   currentTutor: null,   // {id, topic, title, mastery, messages:[...]}
   tutorBusy: false,
+  tutorAdvanced: false,
   loading: false,
   error: null,
 };
@@ -793,12 +862,28 @@ const API_BASE = (() => {
   return p.replace(/\/+$/, '') + '/api';
 })();
 
+// ===================== AUTH TOKEN =====================
+const TOKEN_KEY = 'iqmaxer_token';
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); }
+
 const api = {
   async get(url, opts = {}) {
+    const token = getToken();
     const r = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...opts.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+        ...opts.headers,
+      },
       ...opts,
     });
+    if (r.status === 401) {
+      // Session expired/invalid — drop token and return to the welcome screen.
+      setToken(null);
+      if (!url.endsWith('/auth/me')) showWelcome();
+      throw new Error('Not authenticated');
+    }
     if (!r.ok) {
       const body = await r.text();
       let msg;
@@ -807,6 +892,11 @@ const api = {
     }
     return r.json();
   },
+  // Auth
+  register: data => api.get(API_BASE + '/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  login: data => api.get(API_BASE + '/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  logout: () => api.get(API_BASE + '/auth/logout', { method: 'POST' }),
+  me: () => api.get(API_BASE + '/auth/me'),
   getUser:        () => api.get(API_BASE + '/user'),
   getGoals:       () => api.get(API_BASE + '/goals'),
   getGoal:        id => api.get(API_BASE + '/goals/' + id),
@@ -836,7 +926,7 @@ const api = {
   getTutorSessions: () => api.get(API_BASE + '/tutor/sessions'),
   getTutorSession: id => api.get(API_BASE + '/tutor/sessions/' + id),
   startTutorSession: topic => api.get(API_BASE + '/tutor/sessions', { method: 'POST', body: JSON.stringify({topic}) }),
-  sendTutorMessage: (id, content) => api.get(API_BASE + '/tutor/sessions/' + id + '/message', { method: 'POST', body: JSON.stringify({content}) }),
+  sendTutorMessage: (id, content, advanced) => api.get(API_BASE + '/tutor/sessions/' + id + '/message', { method: 'POST', body: JSON.stringify({content, advanced: !!advanced}) }),
   deleteTutorSession: id => api.get(API_BASE + '/tutor/sessions/' + id, { method: 'DELETE' }),
 };
 
@@ -970,7 +1060,8 @@ function mdLite(str) {
 
 // ===================== TUTOR =====================
 
-const TUTOR_SUGGESTIONS = ['Derivatives', 'Photosynthesis', 'Newton\'s laws', 'Probability basics', 'Balancing equations'];
+const TUTOR_SUGGESTIONS = ['Quantum Mechanics', 'Real Analysis', 'Tensor Calculus', 'Quantum Field Theory',
+  'General Relativity', 'Abstract Algebra', 'Stochastic Calculus', 'Statistical Mechanics'];
 
 async function renderTutor() {
   // Load the session list for the sidebar (cheap).
@@ -1018,11 +1109,19 @@ function renderTutorView() {
             <h2>${escapeHtml(cur.title || cur.topic)}</h2>
             <div class="sub">Mastery ${cur.mastery||0}%</div>
           </div>
-          <button class="btn btn-ghost" style="padding:6px 12px" onclick="tutorDelete(${cur.id})">🗑 Delete</button>
+          <div style="display:flex;align-items:center;gap:12px">
+            <label class="adv-toggle" title="Graduate-level rigor">
+              <input type="checkbox" ${state.tutorAdvanced ? 'checked' : ''} onchange="state.tutorAdvanced=this.checked">
+              Advanced
+            </label>
+            <button class="btn btn-ghost" style="padding:6px 12px" onclick="tutorDelete(${cur.id})">🗑</button>
+          </div>
         </div>
         <div class="tutor-thread" id="tutorThread">
-          ${msgs.map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'assistant'}">${mdLite(m.content)}</div>`).join('')}
-          ${state.tutorBusy ? '<div class="tutor-typing" id="tutorTyping"><span></span><span></span><span></span></div>' : ''}
+          ${msgs.map(m => m.role === 'user'
+            ? `<div class="msg user">${mdLite(m.content)}</div>`
+            : `<div class="msg assistant">${mdLite(m.content)}</div>`).join('')}
+          ${state.tutorBusy ? '<div class="tutor-thinking"><span class="tutor-orb"></span>Thinking…</div>' : ''}
         </div>
         <div class="tutor-input-row">
           <textarea class="tutor-input" id="tutorInput" rows="1" placeholder="Type your answer or a question…"
@@ -1096,7 +1195,7 @@ async function tutorSend() {
   renderTutorView();
 
   try {
-    const res = await api.sendTutorMessage(state.currentTutor.id, text);
+    const res = await api.sendTutorMessage(state.currentTutor.id, text, state.tutorAdvanced);
     state.currentTutor.messages.push({ role: 'assistant', content: res.reply });
     state.currentTutor.mastery = res.mastery;
     if (res.user) { state.user = res.user; updateHUD(); }
@@ -2270,10 +2369,11 @@ function updateHUD() {
   const rank = getRank(user.xp);
   const title = RANK_TITLES[rank] || 'Unknown';
 
+  document.getElementById('hudAvatar').textContent = user.avatar || '🛰️';
   document.getElementById('hudLevel').textContent = `Lv.${level}`;
   document.getElementById('hudRank').textContent = rank;
   document.getElementById('hudRank').className = `rank-badge rank-${rank} sm`;
-  document.getElementById('hudTitle').textContent = title;
+  document.getElementById('hudTitle').textContent = user.display_name || title;
   document.getElementById('hudStreakCount').textContent = user.streak || 0;
 }
 
@@ -2418,23 +2518,168 @@ async function refreshData() {
   }
 }
 
+// ===================== WELCOME / AUTH SCREEN =====================
+
+let authMode = 'login';   // 'login' | 'register'
+const AVATARS = ['🛰️','🌌','⚛️','🔭','🧠','🪐','✨','🧬','📡','🌠'];
+let chosenAvatar = AVATARS[0];
+
+const FLOAT_EQUATIONS = ['∂ψ/∂t = Ĥψ', '∮ E·dl = -dΦ/dt', 'eⁱᵖ + 1 = 0', '∇²φ = ρ/ε₀',
+  '⟨x|p⟩ = eⁱˣᵖ/ℏ', '∫ e^(-x²) dx = √π', 'Rμν - ½Rgμν = 8πTμν', 'ΔxΔp ≥ ℏ/2'];
+
+function showWelcome() {
+  document.body.classList.add('welcome-active');
+  document.getElementById('hud').style.display = 'none';
+  document.querySelector('.bottom-nav').style.display = 'none';
+  renderWelcome();
+  startStarfield();
+}
+
+function renderWelcome() {
+  const isLogin = authMode === 'login';
+  const eqs = FLOAT_EQUATIONS.map((e, i) =>
+    `<span class="float-eq" style="left:${(i * 13 + 5) % 90}%;animation-delay:${i * 1.7}s;animation-duration:${16 + (i % 5) * 4}s">${e}</span>`
+  ).join('');
+
+  const avatarPicker = isLogin ? '' : `
+    <div class="avatar-picker">
+      ${AVATARS.map(a => `<button type="button" class="avatar-opt ${a === chosenAvatar ? 'sel' : ''}" onclick="pickAvatar('${a}')">${a}</button>`).join('')}
+    </div>`;
+
+  const html = `
+    <canvas id="starfield"></canvas>
+    <div class="float-eqs">${eqs}</div>
+    <div class="welcome-panel glass-cosmic">
+      <div class="brand-orb"></div>
+      <h1 class="brand-title">iQmaxer</h1>
+      <p class="brand-tag">An AI that teaches you the hard things — quantum physics, higher math — one step at a time.</p>
+      <div class="auth-toggle">
+        <button class="${isLogin ? 'on' : ''}" onclick="setAuthMode('login')">Log in</button>
+        <button class="${!isLogin ? 'on' : ''}" onclick="setAuthMode('register')">Register</button>
+      </div>
+      <form id="authForm" onsubmit="return submitAuth(event)">
+        ${isLogin ? '' : '<input class="auth-input" id="au_display" placeholder="Display name (optional)" autocomplete="name">'}
+        <input class="auth-input" id="au_user" placeholder="Username" autocomplete="username" required>
+        <input class="auth-input" id="au_pass" type="password" placeholder="Password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required>
+        ${avatarPicker}
+        <div class="auth-err" id="au_err"></div>
+        <button class="btn btn-primary auth-submit" type="submit">${isLogin ? 'Enter' : 'Create account'}</button>
+      </form>
+    </div>`;
+  document.getElementById('app').innerHTML = html;
+  const u = document.getElementById('au_user');
+  if (u) u.focus();
+}
+
+function setAuthMode(mode) { authMode = mode; renderWelcome(); }
+function pickAvatar(a) { chosenAvatar = a; renderWelcome(); }
+
+async function submitAuth(e) {
+  e.preventDefault();
+  const errEl = document.getElementById('au_err');
+  errEl.textContent = '';
+  const username = document.getElementById('au_user').value.trim();
+  const password = document.getElementById('au_pass').value;
+  const btn = document.querySelector('.auth-submit');
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    let res;
+    if (authMode === 'login') {
+      res = await api.login({ username, password });
+    } else {
+      const display_name = (document.getElementById('au_display') || {}).value || '';
+      res = await api.register({ username, password, display_name, avatar: chosenAvatar });
+    }
+    setToken(res.token);
+    state.user = res.user;
+    stopStarfield();
+    await enterApp();
+  } catch (err) {
+    errEl.textContent = err.message || 'Something went wrong';
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Enter' : 'Create account';
+  }
+  return false;
+}
+
+async function logout() {
+  try { await api.logout(); } catch {}
+  setToken(null);
+  state.user = null;
+  state.currentTutor = null;
+  state.tutorSessions = [];
+  showWelcome();
+}
+
+// ----- Starfield canvas -----
+let _starAnim = null;
+function startStarfield() {
+  const canvas = document.getElementById('starfield');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const count = Math.min(140, Math.floor((canvas.width * canvas.height) / 12000));
+    stars = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.6 + 0.3,
+      a: Math.random() * 0.6 + 0.2,
+      tw: Math.random() * 0.02 + 0.005,
+      dy: Math.random() * 0.15 + 0.02,
+    }));
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  let t = 0;
+  function frame() {
+    t += 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      s.y += s.dy; if (s.y > canvas.height) s.y = 0;
+      const alpha = s.a + Math.sin(t * s.tw) * 0.25;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,170,255,${Math.max(0.05, alpha)})`;
+      ctx.fill();
+    }
+    _starAnim = requestAnimationFrame(frame);
+  }
+  if (!document.hidden) frame();
+}
+function stopStarfield() {
+  if (_starAnim) { cancelAnimationFrame(_starAnim); _starAnim = null; }
+}
+
 // ===================== INIT =====================
 
 async function init() {
-  // Load user first for HUD
+  // No token? Straight to the welcome screen.
+  if (!getToken()) { showWelcome(); return; }
+  // Validate the token and load the user.
   try {
-    state.user = await api.getUser();
-    updateHUD();
+    state.user = await api.me();
   } catch (e) {
-    console.warn('Could not load user:', e);
+    showWelcome();
+    return;
   }
+  enterApp();
+}
 
-  // Initial render
+// Reveal the app chrome (HUD + nav) and route to the current page.
+async function enterApp() {
+  document.body.classList.remove('welcome-active');
+  document.getElementById('hud').style.display = '';
+  document.querySelector('.bottom-nav').style.display = '';
+  updateHUD();
+  if (!location.hash || location.hash === '#') location.hash = '#/';
   await router();
 }
 
 // Event listeners
-window.addEventListener('hashchange', router);
+window.addEventListener('hashchange', () => { if (getToken() && state.user) router(); });
 window.addEventListener('DOMContentLoaded', init);
 
 // Handle page already loaded

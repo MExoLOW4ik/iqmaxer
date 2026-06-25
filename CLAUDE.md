@@ -52,4 +52,12 @@ There are **two distinct quest concepts** backed by separate tables, and `databa
 
 Additional standalone features have their own tables and endpoints: `materials` (`/api/materials`), `tests` + `test_questions` + `test_results` (`/api/tests`, with server-side answer shuffling via `_shuffle_question`), and `assignments` (`/api/assignments`).
 
-This is a **single-user app**: `database.py` maintains one row in the `user` table (`get_user()`), with no auth or per-user scoping anywhere.
+## Accounts & auth
+
+The app is **multi-user**. `backend/auth.py` handles PBKDF2 password hashing (stdlib, no deps) and opaque session tokens stored in the `sessions` table; the frontend keeps the token in `localStorage` and sends `Authorization: Bearer <token>`. The FastAPI dependency `auth.current_user` resolves the token to a user (401 otherwise) and gates every personal endpoint — pass `user["id"]` into the database calls.
+
+- **Per-user** (rows carry `user_id`): `users` (profile + XP/level/rank/streak), `tutor_sessions`, `goals`/`quests`, `assignments`, `achievements`, `test_results`, `ai_courses`. All their DB functions take `user_id` and filter/own-check by it.
+- **Shared/global**: the `materials` and `tests`/`test_questions` content libraries (currently unseeded/empty).
+- `database.get_user(user_id)`, `update_user_xp(user_id, xp)`, and `update_streak(user_id)` all require the user id — there is no implicit "user 1" anymore.
+- The whole SPA is **gated by a cosmic welcome screen**: `init()` checks the token via `GET /api/auth/me`; failure shows the login/register screen instead of the app.
+- There is **no DB migration** path — the schema is treated as a fresh build (consistent with `start.sh` wiping the DB on boot).
