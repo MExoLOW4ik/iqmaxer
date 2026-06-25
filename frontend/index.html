@@ -3,39 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>iQmaxer — Solo Leveling</title>
+<title>iQmaxer — Learn with a friendly tutor</title>
 <style>
 /* ========== RESET & BASE ========== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth}
 body{
-  background:#0a0a1a;
-  color:#e0e0f0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(99,102,241,0.10), transparent),
+    radial-gradient(1000px 500px at -10% 110%, rgba(20,184,166,0.08), transparent),
+    #141627;
+  color:#e8e9f3;
   font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
   min-height:100vh;
   overflow-x:hidden;
-  line-height:1.5;
+  line-height:1.55;
 }
-a{color:#48cae4;text-decoration:none}
-a:hover{color:#90e0ef}
+a{color:#7c83ff;text-decoration:none}
+a:hover{color:#a5acff}
 
 /* ========== SCROLLBAR ========== */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:#0a0a1a}
-::-webkit-scrollbar-thumb{background:#1a1a3e;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#2a2a5e}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a2d45;border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:#3a3e5e}
 
 /* ========== GLASS CARD ========== */
 .glass{
-  background:rgba(17,17,40,0.85);
+  background:rgba(30,33,56,0.82);
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
-  border:1px solid #1a1a3e;
-  border-radius:16px;
+  border:1px solid rgba(124,131,255,0.12);
+  border-radius:18px;
   padding:20px;
-  transition:all .3s ease;
+  transition:all .25s ease;
 }
-.glass:hover{border-color:#2a2a5e;box-shadow:0 0 20px rgba(0,180,216,0.08)}
+.glass:hover{border-color:rgba(124,131,255,0.28);box-shadow:0 8px 30px rgba(99,102,241,0.10)}
 
 /* ========== RANK BADGES ========== */
 .rank-badge{
@@ -63,31 +66,31 @@ a:hover{color:#90e0ef}
   cursor:pointer;transition:all .3s ease;
 }
 .btn-primary{
-  background:linear-gradient(135deg,#0077b6,#00b4d8);
-  color:#fff;box-shadow:0 0 20px rgba(0,180,216,0.3);
+  background:linear-gradient(135deg,#6366f1,#14b8a6);
+  color:#fff;box-shadow:0 6px 18px rgba(99,102,241,0.28);
 }
 .btn-primary:hover{
-  box-shadow:0 0 30px rgba(0,180,216,0.5);
+  box-shadow:0 10px 26px rgba(99,102,241,0.42);
   transform:translateY(-2px);
 }
 .btn-primary:active{transform:translateY(0)}
 .btn-outline{
-  background:transparent;color:#00b4d8;border:1px solid #00b4d8;
+  background:transparent;color:#7c83ff;border:1px solid rgba(124,131,255,0.55);
 }
-.btn-outline:hover{background:rgba(0,180,216,0.1);box-shadow:0 0 15px rgba(0,180,216,0.15)}
+.btn-outline:hover{background:rgba(124,131,255,0.12)}
 .btn-ghost{
-  background:transparent;color:#888;border:1px solid #1a1a3e;
+  background:transparent;color:#9a9db5;border:1px solid rgba(124,131,255,0.15);
 }
-.btn-ghost:hover{color:#e0e0f0;border-color:#2a2a5e}
+.btn-ghost:hover{color:#e8e9f3;border-color:rgba(124,131,255,0.3)}
 
 /* ========== XP BAR ========== */
 .xp-bar-wrap{
-  width:100%;height:12px;background:#1a1a3e;border-radius:99px;
+  width:100%;height:12px;background:rgba(124,131,255,0.12);border-radius:99px;
   overflow:hidden;position:relative;
 }
 .xp-bar-fill{
   height:100%;width:0%;
-  background:linear-gradient(90deg,#0077b6,#00b4d8,#48cae4);
+  background:linear-gradient(90deg,#6366f1,#14b8a6,#5eead4);
   border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1);
   position:relative;
 }
@@ -111,7 +114,7 @@ a:hover{color:#90e0ef}
 .hud-left{display:flex;align-items:center;gap:16px}
 .hud-right{display:flex;align-items:center;gap:12px}
 .hud-level{
-  font-weight:800;font-size:1.2rem;color:#48cae4;
+  font-weight:800;font-size:1.2rem;color:#7c83ff;
 }
 .hud-title{font-size:.8rem;color:#888}
 .hud-streak{display:flex;align-items:center;gap:4px;color:#fbbf24;font-weight:600;font-size:.85rem}
@@ -655,8 +658,51 @@ a:hover{color:#90e0ef}
   padding:6px 12px;border-radius:8px;
   color:#555;font-size:.65rem;transition:all .2s;
 }
-.bottom-nav a.active{color:#00b4d8}
+.bottom-nav a.active{color:#7c83ff}
 .bottom-nav a .nav-icon{font-size:1.2rem;padding:0;color:inherit}
+
+/* ========== TUTOR ========== */
+.tutor-layout{display:flex;gap:16px;height:calc(100vh - 64px - 70px);}
+.tutor-sidebar{
+  width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;
+  overflow-y:auto;padding-right:4px;
+}
+.tutor-new-btn{width:100%;justify-content:center}
+.tutor-session{
+  text-align:left;width:100%;padding:12px 14px;border-radius:12px;cursor:pointer;
+  background:rgba(30,33,56,0.6);border:1px solid rgba(124,131,255,0.10);
+  color:#cfd1e6;transition:all .2s;display:flex;flex-direction:column;gap:4px;
+}
+.tutor-session:hover{border-color:rgba(124,131,255,0.3)}
+.tutor-session.active{background:rgba(99,102,241,0.16);border-color:rgba(124,131,255,0.5);color:#fff}
+.tutor-session-title{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tutor-session-meta{font-size:.7rem;color:#8e91ac;display:flex;align-items:center;gap:6px}
+.tutor-mini-bar{flex:1;height:5px;border-radius:99px;background:rgba(124,131,255,0.15);overflow:hidden}
+.tutor-mini-bar>i{display:block;height:100%;background:linear-gradient(90deg,#6366f1,#14b8a6)}
+.tutor-main{flex:1;display:flex;flex-direction:column;min-width:0;
+  background:rgba(24,27,46,0.6);border:1px solid rgba(124,131,255,0.12);border-radius:18px;overflow:hidden}
+.tutor-head{padding:14px 18px;border-bottom:1px solid rgba(124,131,255,0.12);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tutor-head h2{font-size:1rem;margin:0}
+.tutor-head .sub{font-size:.72rem;color:#8e91ac}
+.tutor-thread{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:78%;padding:12px 15px;border-radius:16px;font-size:.92rem;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+.msg.assistant{align-self:flex-start;background:rgba(30,33,56,0.95);border:1px solid rgba(124,131,255,0.14);border-bottom-left-radius:5px}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#6366f1,#5b5fe0);color:#fff;border-bottom-right-radius:5px}
+.msg.assistant strong{color:#a5acff}
+.tutor-typing{align-self:flex-start;color:#8e91ac;font-size:.85rem;padding:6px 4px}
+.tutor-typing span{display:inline-block;width:6px;height:6px;border-radius:50%;background:#7c83ff;margin:0 2px;animation:tutorDot 1.2s infinite}
+.tutor-typing span:nth-child(2){animation-delay:.2s}.tutor-typing span:nth-child(3){animation-delay:.4s}
+@keyframes tutorDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.tutor-input-row{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(124,131,255,0.12)}
+.tutor-input{flex:1;resize:none;background:rgba(20,22,39,0.9);border:1px solid rgba(124,131,255,0.18);
+  border-radius:12px;color:#e8e9f3;padding:12px 14px;font-family:inherit;font-size:.92rem;max-height:140px}
+.tutor-input:focus{outline:none;border-color:rgba(124,131,255,0.5)}
+.tutor-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px;color:#9a9db5}
+.tutor-empty h2{color:#e8e9f3;font-size:1.3rem}
+.tutor-suggests{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:440px}
+.tutor-suggest{padding:8px 14px;border-radius:99px;background:rgba(124,131,255,0.10);border:1px solid rgba(124,131,255,0.22);color:#cfd1e6;cursor:pointer;font-size:.82rem;transition:all .2s}
+.tutor-suggest:hover{background:rgba(124,131,255,0.2)}
+@media(max-width:720px){.tutor-sidebar{display:none}.tutor-layout{height:calc(100vh - 64px - 70px)}}
 </style>
 </head>
 <body>
@@ -672,8 +718,8 @@ a:hover{color:#90e0ef}
   </div>
   <div class="hud-right">
     <span class="hud-streak" id="hudStreak">🔥 <span id="hudStreakCount">0</span></span>
-    <button class="nav-icon" onclick="navigate('/ai/new')" title="New Course">⚡</button>
-    <button class="nav-icon" onclick="navigate('/')" title="Dashboard">🏠</button>
+    <button class="nav-icon" onclick="navigate('/')" title="Tutor">💬</button>
+    <button class="nav-icon" onclick="navigate('/dashboard')" title="Dashboard">🏠</button>
   </div>
 </header>
 
@@ -691,29 +737,29 @@ a:hover{color:#90e0ef}
 
 <!-- ===== BOTTOM NAV ===== -->
 <nav class="bottom-nav">
-  <a href="#/" data-nav="dashboard">
+  <a href="#/" data-nav="tutor">
+    <span class="nav-icon">💬</span>Tutor
+  </a>
+  <a href="#/dashboard" data-nav="dashboard">
     <span class="nav-icon">🏠</span>Home
   </a>
   <a href="#/materials" data-nav="materials">
     <span class="nav-icon">📚</span>Learn
   </a>
   <a href="#/ai" data-nav="ai">
-    <span class="nav-icon">🧠</span>AI
+    <span class="nav-icon">🧠</span>Courses
   </a>
   <a href="#/tests" data-nav="tests">
     <span class="nav-icon">📝</span>Tests
   </a>
-  <a href="#/assignments" data-nav="assignments">
-    <span class="nav-icon">✍️</span>Tasks
-  </a>
   <a href="#/achievements" data-nav="achievements">
-    <span class="nav-icon">🏆</span>Achievements
+    <span class="nav-icon">🏆</span>Awards
   </a>
 </nav>
 
 <script>
 /* ===================================================================
-   iQmaxer — Solo Leveling Frontend
+   iQmaxer — friendly tutor frontend
    =================================================================== */
 
 // ===================== STATE =====================
@@ -733,6 +779,9 @@ let state = {
   courses: [],
   currentCourse: null,
   currentQuest: null,
+  tutorSessions: [],
+  currentTutor: null,   // {id, topic, title, mastery, messages:[...]}
+  tutorBusy: false,
   loading: false,
   error: null,
 };
@@ -783,11 +832,17 @@ const api = {
   generateCourse: goal => api.get(API_BASE + '/ai/courses/generate', { method: 'POST', body: JSON.stringify({goal}) }),
   submitQuestAnswer: (id, answer) => api.get(API_BASE + '/ai/quests/' + id + '/answer', { method: 'POST', body: JSON.stringify({answer}) }),
   getQuestHint: id => api.get(API_BASE + '/ai/quests/' + id + '/hint', { method: 'POST' }),
+  // Tutor
+  getTutorSessions: () => api.get(API_BASE + '/tutor/sessions'),
+  getTutorSession: id => api.get(API_BASE + '/tutor/sessions/' + id),
+  startTutorSession: topic => api.get(API_BASE + '/tutor/sessions', { method: 'POST', body: JSON.stringify({topic}) }),
+  sendTutorMessage: (id, content) => api.get(API_BASE + '/tutor/sessions/' + id + '/message', { method: 'POST', body: JSON.stringify({content}) }),
+  deleteTutorSession: id => api.get(API_BASE + '/tutor/sessions/' + id, { method: 'DELETE' }),
 };
 
 // ===================== RANK HELPERS =====================
 const RANK_ORDER = ['E','D','C','B','A','S'];
-const RANK_TITLES = { E:'Novice', D:'Apprentice', C:'Warrior', B:'Elite', A:'Master', S:'Monarch' };
+const RANK_TITLES = { E:'Novice', D:'Apprentice', C:'Scholar', B:'Expert', A:'Master', S:'Legend' };
 const RANK_COLORS = { E:'#888', D:'#4ade80', C:'#60a5fa', B:'#a78bfa', A:'#fbbf24', S:'#ef4444' };
 
 function getRank(xp) {
@@ -906,6 +961,168 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+// Minimal, safe markdown: escape first, then allow **bold** and line breaks.
+function mdLite(str) {
+  let s = escapeHtml(str);
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  return s;
+}
+
+// ===================== TUTOR =====================
+
+const TUTOR_SUGGESTIONS = ['Derivatives', 'Photosynthesis', 'Newton\'s laws', 'Probability basics', 'Balancing equations'];
+
+async function renderTutor() {
+  // Load the session list for the sidebar (cheap).
+  try { state.tutorSessions = await api.getTutorSessions(); } catch { state.tutorSessions = []; }
+  renderTutorView();
+}
+
+function renderTutorView() {
+  const sessions = state.tutorSessions || [];
+  const cur = state.currentTutor;
+
+  const sidebar = `
+    <aside class="tutor-sidebar">
+      <button class="btn btn-primary tutor-new-btn" onclick="tutorNewPrompt()">＋ New topic</button>
+      ${sessions.length === 0 ? '<div style="color:#8e91ac;font-size:.8rem;padding:8px 4px">No sessions yet. Start a topic above!</div>' : ''}
+      ${sessions.map(s => `
+        <button class="tutor-session ${cur && cur.id === s.id ? 'active' : ''}" onclick="tutorOpen(${s.id})">
+          <span class="tutor-session-title">${escapeHtml(s.title || s.topic)}</span>
+          <span class="tutor-session-meta">
+            <span class="tutor-mini-bar"><i style="width:${s.mastery||0}%"></i></span>
+            ${s.mastery||0}%
+          </span>
+        </button>`).join('')}
+    </aside>`;
+
+  let main;
+  if (!cur) {
+    main = `
+      <section class="tutor-main">
+        <div class="tutor-empty">
+          <div style="font-size:2.4rem">💬</div>
+          <h2>Learn anything, one step at a time</h2>
+          <p>Pick a topic and your tutor will walk you through it — explaining, giving examples, and asking gentle questions to guide you.</p>
+          <div class="tutor-suggests">
+            ${TUTOR_SUGGESTIONS.map(t => `<button class="tutor-suggest" onclick="tutorStart('${escapeHtml(t)}')">${escapeHtml(t)}</button>`).join('')}
+          </div>
+        </div>
+      </section>`;
+  } else {
+    const msgs = (cur.messages || []).filter(m => m.role !== 'system');
+    main = `
+      <section class="tutor-main">
+        <div class="tutor-head">
+          <div>
+            <h2>${escapeHtml(cur.title || cur.topic)}</h2>
+            <div class="sub">Mastery ${cur.mastery||0}%</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:6px 12px" onclick="tutorDelete(${cur.id})">🗑 Delete</button>
+        </div>
+        <div class="tutor-thread" id="tutorThread">
+          ${msgs.map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'assistant'}">${mdLite(m.content)}</div>`).join('')}
+          ${state.tutorBusy ? '<div class="tutor-typing" id="tutorTyping"><span></span><span></span><span></span></div>' : ''}
+        </div>
+        <div class="tutor-input-row">
+          <textarea class="tutor-input" id="tutorInput" rows="1" placeholder="Type your answer or a question…"
+            onkeydown="tutorKey(event)" oninput="tutorAutogrow(this)" ${state.tutorBusy ? 'disabled' : ''}></textarea>
+          <button class="btn btn-primary" onclick="tutorSend()" ${state.tutorBusy ? 'disabled' : ''}>Send</button>
+        </div>
+      </section>`;
+  }
+
+  renderPage(`<div class="tutor-layout">${sidebar}${main}</div>`);
+  tutorScrollToBottom();
+  const input = document.getElementById('tutorInput');
+  if (input && !state.tutorBusy) input.focus();
+}
+
+function tutorScrollToBottom() {
+  const thread = document.getElementById('tutorThread');
+  if (thread) thread.scrollTop = thread.scrollHeight;
+}
+
+function tutorAutogrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function tutorKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); tutorSend(); }
+}
+
+function tutorNewPrompt() {
+  const topic = prompt('What would you like to learn about?');
+  if (topic && topic.trim()) tutorStart(topic.trim());
+}
+
+async function tutorStart(topic) {
+  if (state.tutorBusy) return;
+  state.tutorBusy = true;
+  state.currentTutor = { id: null, topic, title: topic, mastery: 0, messages: [] };
+  renderTutorView();
+  try {
+    const session = await api.startTutorSession(topic);
+    state.currentTutor = session;
+    state.tutorSessions = await api.getTutorSessions();
+  } catch (e) {
+    notify('Could not start session: ' + e.message);
+    state.currentTutor = null;
+  } finally {
+    state.tutorBusy = false;
+    renderTutorView();
+  }
+}
+
+async function tutorOpen(id) {
+  try {
+    state.currentTutor = await api.getTutorSession(id);
+    renderTutorView();
+  } catch (e) {
+    notify('Could not open session: ' + e.message);
+  }
+}
+
+async function tutorSend() {
+  if (state.tutorBusy || !state.currentTutor || !state.currentTutor.id) return;
+  const input = document.getElementById('tutorInput');
+  const text = input ? input.value.trim() : '';
+  if (!text) return;
+
+  // Optimistically show the learner's message + typing indicator.
+  state.currentTutor.messages.push({ role: 'user', content: text });
+  state.tutorBusy = true;
+  renderTutorView();
+
+  try {
+    const res = await api.sendTutorMessage(state.currentTutor.id, text);
+    state.currentTutor.messages.push({ role: 'assistant', content: res.reply });
+    state.currentTutor.mastery = res.mastery;
+    if (res.user) { state.user = res.user; updateHUD(); }
+    if (res.level_up) showLevelUp(res.user, res.user.level - 1, getRank(res.user.xp));
+    // Refresh sidebar mastery/order.
+    try { state.tutorSessions = await api.getTutorSessions(); } catch {}
+  } catch (e) {
+    notify('Tutor error: ' + e.message);
+  } finally {
+    state.tutorBusy = false;
+    renderTutorView();
+  }
+}
+
+async function tutorDelete(id) {
+  if (!confirm('Delete this learning session?')) return;
+  try {
+    await api.deleteTutorSession(id);
+    if (state.currentTutor && state.currentTutor.id === id) state.currentTutor = null;
+    state.tutorSessions = await api.getTutorSessions();
+    renderTutorView();
+  } catch (e) {
+    notify('Could not delete: ' + e.message);
+  }
+}
+
 // ===================== PAGES =====================
 
 function renderDashboard() {
@@ -919,7 +1136,7 @@ function renderDashboard() {
   let html = '';
 
   // System message
-  html += `<div class="system-msg">Welcome back, Hunter. ${user.display_name || user.username || 'Player'} — your daily quests await.</div>`;
+  html += `<div class="system-msg">Welcome back, ${user.display_name || user.username || 'learner'}! Your tasks for today await.</div>`;
 
   // Player Card
   html += renderPlayerCard(user);
@@ -2032,7 +2249,9 @@ function getRoute(hash) {
   if (testMatch) return { page: 'test-detail', params: { id: testMatch[1] } };
   // Match other pages
   const pages = {
-    '/': 'dashboard',
+    '/': 'tutor',
+    '/tutor': 'tutor',
+    '/dashboard': 'dashboard',
     '/goals': 'goals',
     '/create': 'create-redirect',
     '/achievements': 'achievements',
@@ -2041,7 +2260,7 @@ function getRoute(hash) {
     '/assignments': 'assignments',
     '/ai': 'ai-courses',
   };
-  return { page: pages[hash] || 'dashboard', params: {} };
+  return { page: pages[hash] || 'tutor', params: {} };
 }
 
 function updateHUD() {
@@ -2111,6 +2330,9 @@ async function router() {
 
   try {
     switch (route.page) {
+      case 'tutor':
+        await renderTutor();
+        break;
       case 'dashboard':
         await refreshData();
         renderDashboard();

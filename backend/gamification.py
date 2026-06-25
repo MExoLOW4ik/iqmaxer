@@ -1,12 +1,12 @@
 """
-gamification.py — iQmaxer Solo Leveling RPG Engine
+gamification.py — iQmaxer RPG Progression Engine
 ===================================================
 
 Pure XP, level, rank, streak, and achievement logic.
 All functions are stateless (no I/O); the FastAPI caller
 handles persistence and user state.
 
-Rank system (Solo Leveling inspired):
+Rank system:
     E  (Levels 1-3)
     D  (Levels 4-6)
     C  (Levels 7-9)
@@ -230,14 +230,14 @@ _LEVEL_BENEFITS: list[tuple[int, str, list[str], str]] = [
     ),
     (
         20,
-        "Shadow Monarch",
+        "Legend",
         [
             "max_goal_slots",
             "max_daily_quests",
             "special_title",
             "double_xp_all_quests",
         ],
-        "The pinnacle of power. All benefits unlocked. You are the Shadow Monarch.",
+        "The pinnacle of mastery. All benefits unlocked. You are a Legend.",
     ),
 ]
 
@@ -318,9 +318,9 @@ _ACHIEVEMENT_DEFS: dict[str, dict[str, Any]] = {
         "icon": "🏆",
         "xp_bonus": 1000,
     },
-    "s_rank_hunter": {
-        "id": "s_rank_hunter",
-        "name": "S-Rank Hunter",
+    "s_rank_master": {
+        "id": "s_rank_master",
+        "name": "S-Rank Master",
         "description": "Complete an S-rank quest.",
         "icon": "👑",
         "xp_bonus": 1500,
@@ -417,9 +417,9 @@ def check_achievements(completed_quests: list[dict[str, Any]]) -> list[dict[str,
     if unique_goals >= 5:
         earned.append(dict(_ACHIEVEMENT_DEFS["conqueror"]))
 
-    # S-Rank Hunter: completed an S-rank quest
+    # S-Rank Master: completed an S-rank quest
     if s_rank_completed:
-        earned.append(dict(_ACHIEVEMENT_DEFS["s_rank_hunter"]))
+        earned.append(dict(_ACHIEVEMENT_DEFS["s_rank_master"]))
 
     return earned
 

@@ -1,5 +1,5 @@
 """
-ai_course.py — iQmaxer AI Course Generator (OpenRouter + Solo Leveling themed)
+ai_course.py — iQmaxer AI Course Generator (OpenRouter + friendly adventure themed)
 
 Generates complete RPG-style courses with story-driven practical problems.
 Uses OpenRouter to access GPT-4o or Claude Sonnet 4. Falls back to seeded
@@ -31,18 +31,18 @@ else:
 
 RANK_ORDER = ["E", "D", "C", "B", "A", "S"]
 
-# ── Solo Leveling System Prompt for Course Generation ──────────────────────
+# ── Adventure System Prompt for Course Generation ──────────────────────────
 
-COURSE_SYSTEM_PROMPT = """You are the System from Solo Leveling, generating an RPG-style learning course for a Hunter (the user).
+COURSE_SYSTEM_PROMPT = """You are an imaginative course designer, generating an adventure-style learning course for the learner.
 
-You must generate a complete course with practical, story-driven problems. Each problem is a "quest" that the Hunter must complete.
+You must generate a complete course with practical, story-driven problems. Each problem is a "quest" that the learner completes.
 
 CRITICAL RULES:
 1. Do NOT think step-by-step. Do NOT include reasoning or thinking sections.
 2. Output ONLY the raw JSON object — no markdown, no code fences, no extra text.
 3. Each quest MUST be a vivid, practical scenario with SPECIFIC NUMBERS and conditions
 4. Use extreme/unusual settings: other planets, deep ocean, volcanoes, magical worlds, futuristic tech
-5. Solo Leveling / RPG game style: the user is a "hunter" completing quests
+5. Friendly adventure/RPG game style: the learner is an explorer completing quests
 6. Generate 3-5 quests spanning difficulty ranks E (easy) through A (hard)
 7. Each quest MUST have a clear, unambiguous correct_answer (number or short string)
 8. Problems can be from math, physics, chemistry, or any STEM field
@@ -71,7 +71,7 @@ EXAMPLE of a good quest:
 ```json
 {
   "title": "The Mars Oil Barrel Launch",
-  "story": "You are a Hunter on Mars. A supply drop of a 100kg oil barrel must be launched from Point A (altitude 0m) to Point B (altitude 50m) which is 200m away horizontally. Mars gravity is 3.72 m/s². There is a headwind of 10 m/s opposing the launch. Assuming no air resistance on the barrel itself (only wind affects horizontal velocity), calculate the minimum initial velocity (in m/s) required to reach Point B. Round to 1 decimal place.",
+  "story": "You are an explorer on Mars. A supply drop of a 100kg oil barrel must be launched from Point A (altitude 0m) to Point B (altitude 50m) which is 200m away horizontally. Mars gravity is 3.72 m/s². There is a headwind of 10 m/s opposing the launch. Assuming no air resistance on the barrel itself (only wind affects horizontal velocity), calculate the minimum initial velocity (in m/s) required to reach Point B. Round to 1 decimal place.",
   "topic": "Projectile Motion with Modified Gravity",
   "difficulty_rank": "D",
   "xp_reward": 30,
@@ -210,7 +210,7 @@ def _parse_course(raw: str) -> Optional[dict]:
 
 async def generate_course(goal: str) -> dict:
     """
-    Generate an AI-powered Solo Leveling style course with story-driven quests.
+    Generate an AI-powered adventure-style course with story-driven quests.
 
     Parameters
     ----------
@@ -247,12 +247,12 @@ async def generate_course(goal: str) -> dict:
             "quests": [],
         }
 
-    prompt = f"""Generate a Solo Leveling RPG-style course for the following learning goal:
+    prompt = f"""Generate a friendly adventure RPG-style course for the following learning goal:
 
 User's Goal: {goal}
 
 Create engaging, story-driven practical problems that teach real STEM concepts through vivid scenarios.
-The user is a Hunter in the Solo Leveling universe. Generate 3-5 quests with varying difficulty.
+The learner is an explorer on an adventure. Generate 3-5 quests with varying difficulty.
 
 Remember:
 - Each quest must have a vivid story with SPECIFIC NUMBERS
@@ -313,7 +313,7 @@ async def check_answer(quest: dict, user_answer: str) -> dict:
         if submitted == correct:
             return {
                 "is_correct": True,
-                "feedback": "Correct! Well done, Hunter!",
+                "feedback": "Correct! Well done! \ud83c\udf89",
             }
 
         # Try numeric comparison with tolerance
@@ -323,7 +323,7 @@ async def check_answer(quest: dict, user_answer: str) -> dict:
             if abs(correct_num - submitted_num) / max(abs(correct_num), 1) < 0.05:
                 return {
                     "is_correct": True,
-                    "feedback": "Correct (within tolerance)! Good work, Hunter!",
+                    "feedback": "Correct (within tolerance)! Nice work! \ud83c\udf89",
                 }
         except (ValueError, AttributeError):
             pass
@@ -335,7 +335,7 @@ async def check_answer(quest: dict, user_answer: str) -> dict:
             "feedback": f"That's not quite right. {hint}",
         }
 
-    prompt = f"""You are the System from Solo Leveling, checking a Hunter's answer to a quest.
+    prompt = f"""You are a friendly tutor checking the learner's answer to a quest.
 
 Quest Title: {quest.get('title', 'Unknown')}
 Quest Story: {quest.get('story', '')}
@@ -346,7 +346,7 @@ Hint: {quest.get('hint', '')}
 User's Answer: {user_answer}
 
 Determine if the user's answer is correct. For numerical answers, allow reasonable tolerance (±5% or small absolute difference).
-Provide constructive, RPG-style feedback. If correct, praise the Hunter. If wrong, explain the right approach without giving the answer directly.
+Provide constructive, encouraging feedback. If correct, praise the learner warmly. If wrong, explain the right approach without giving the answer directly.
 
 Respond in JSON format ONLY:
 {{"is_correct": true/false, "feedback": "Your feedback here"}}"""
@@ -398,7 +398,7 @@ async def generate_hint(quest: dict) -> str:
     if not OPENROUTER_API_KEY:
         return "Try breaking the problem down step by step. What formulas or concepts apply here?"
 
-    prompt = f"""You are the System from Solo Leveling, giving a Hunter a hint for a quest.
+    prompt = f"""You are a friendly tutor giving the learner a hint for a quest.
 
 Quest Title: {quest.get('title', 'Unknown')}
 Quest Story: {quest.get('story', '')}
@@ -406,9 +406,9 @@ Topic: {quest.get('topic', '')}
 Correct Answer: {quest.get('correct_answer', '')}
 
 Generate a helpful hint (2-3 sentences) that:
-1. Guides the Hunter toward the right approach
+1. Guides the learner toward the right approach
 2. Does NOT give away the exact answer
-3. Is in the Solo Leveling RPG style
+3. Is friendly and encouraging
 4. References the specific scenario and numbers
 
 Respond with ONLY the hint text, no JSON, no markdown."""
